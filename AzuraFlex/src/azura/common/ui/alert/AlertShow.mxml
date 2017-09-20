@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 minWidth="100" minHeight="80" creationComplete="panel1_creationCompleteHandler(event)"
+		 doubleClick="panel1_doubleClickHandler(event)" doubleClickEnabled="true"
+		 mouseDown="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		 title="{header}">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Label;
+			
+			[Bindable]
+			protected var header:String;
+			[Bindable]
+			protected var text:String;
+			
+			private var timer:Timer;
+			
+			public static function show(text:String,header:String='',parent:DisplayObject=null):void{
+				var np:AlertShow=new AlertShow();
+				np.text=text;
+				np.header=header;
+				
+				if(parent==null)
+					parent=FlexGlobals.topLevelApplication as DisplayObject;
+				
+				PopUpManager.addPopUp(np, parent,true);
+				PopUpManager.centerPopUp(np);
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+//				var mt:TextLineMetrics=laShow.measureText(text);
+//				laShow.width=mt.width+50;
+//				taShow.height=Math.min(mt.height,stage.stageHeight-100);
+				
+				this.height=Math.min(this.height,stage.stageHeight-50);
+				PopUpManager.centerPopUp(this);
+				
+				var duration:int=2000+text.length*100;
+				timer=new Timer(duration*10,1);
+				timer.addEventListener(TimerEvent.TIMER_COMPLETE,onTime);
+				timer.start();
+			}
+			
+			private function onTime(event:TimerEvent):void{
+				timer.removeEventListener(TimerEvent.TIMER_COMPLETE,onTime);
+				PopUpManager.removePopUp(this);								
+			}
+			
+			protected function panel1_doubleClickHandler(event:MouseEvent):void
+			{
+				timer.removeEventListener(TimerEvent.TIMER_COMPLETE,onTime);
+				timer.stop();
+				onTime(null);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label id="laShow" visible="false" left="10" right="10" top="10" bottom="10" fontSize="24"
+			 fontWeight="normal" text="{text}"/>
+	<s:TextArea id="taShow" left="10" right="10" top="10" bottom="10" editable="false" fontSize="22"
+				fontWeight="normal" text="{text}"/>
+</s:Panel>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="{lbText.width+tiValue.width+10}" height="21" click="setFocus()">
+	<fx:Script>
+		<![CDATA[			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var _label:String='';
+			
+			[Bindable]
+			public var _num:Number=0;
+			
+			protected function tiValue_focusInHandler(event:FocusEvent):void
+			{
+				tiValue.selectRange(0,tiValue.text.length);
+			}
+			
+			protected function tiValue_enterHandler(event:FlexEvent):void
+			{
+//				_num=parseInt(tiValue.text);
+				_num=parseFloat(tiValue.text);
+				this.setFocus();
+				dispatchEvent(new Event("CHANGE"));
+			}
+			
+			protected function tiValue_focusOutHandler(event:FocusEvent):void
+			{
+				tiValue.text=_num.toString();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, _value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="CHANGE", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Label id="lbText" left="4" text="{_label}" verticalCenter="0"/>
+	<s:TextInput id="tiValue" right="0" width="30" height="19"
+				 click="event.stopImmediatePropagation()" enter="tiValue_enterHandler(event)"
+				 focusIn="tiValue_focusInHandler(event)" focusOut="tiValue_focusOutHandler(event)"
+				 restrict="0-9\[-.]" text="{_num}" textAlign="right" verticalCenter="0"/>
+</s:BorderContainer>

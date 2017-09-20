@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:editor2="azura.banshee.zbox3.editor.*"
+		 xmlns:dish="azura.banshee.zbox3.editor.dish.*"
+		 xmlns:animal="azura.banshee.zbox3.editor.animal.*"
+		 xmlns:ztree="azura.banshee.zebra.editor.ztree.*"
+		 xmlns:zforest="azura.banshee.zebra.editor.zforest.*"
+		 xmlns:check="azura.banshee.zebra.editor.zforest.check.*"
+		 xmlns:walk="azura.banshee.zebra.editor.zforest.walk.*"
+		 xmlns:zpano="azura.banshee.zebra.editor.zpano.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var lastActivePage:PageI3;
+			
+			public var canvas:EditorCanvas3;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				canvas=new EditorCanvas3();
+				canvas.init(stage,holder,saReady);
+			}
+			
+			private function saReady():void{
+				pageZebraDisplay.activate(canvas);
+				lastActivePage=pageZebraDisplay;
+			}
+			
+			private var currentIdx:int=-1;
+			protected function bbZebra_changeHandler(event:IndexChangeEvent):void
+			{
+				if(currentIdx==event.newIndex)
+					return;
+				
+				//				trace("change page",name);
+				if(lastActivePage!=null){
+					lastActivePage.deactivate();
+					lastActivePage=null;
+					//					canvas.ruler.zbox.visible=false;
+				}
+				
+				if(event.newIndex==0){
+					//					canvas.ruler.zbox.visible=true;
+					pageZebraDisplay.activate(canvas);
+					lastActivePage=pageZebraDisplay;
+				}else if(event.newIndex==1){
+					pageZebraWalk.activate(canvas);
+					lastActivePage=pageZebraWalk;
+				}else if(event.newIndex==2){
+					pageZanimal.activate(canvas);
+					lastActivePage=pageZanimal;
+				}else if(event.newIndex==3){
+					pageZtree.activate(canvas);
+					lastActivePage=pageZtree;
+				}else if(event.newIndex==4){
+					pageZforest.activate(canvas);
+					lastActivePage=pageZforest;
+				}else if(event.newIndex==5){
+					pageZforestCheck.activate(canvas);
+					lastActivePage=pageZforestCheck;
+				}else if(event.newIndex==6){
+					pageZforestWalk.activate(canvas);
+					lastActivePage=pageZforestWalk;
+				}else if(event.newIndex==7){
+					pageZebraVideo.activate(canvas);
+					lastActivePage=pageZebraVideo;
+				}else if(event.newIndex==8){
+					pageZpanoDisplay.activate(canvas);
+					lastActivePage=pageZpanoDisplay;
+				}else if(event.newIndex==9){
+					pageZebraText.activate(canvas);
+					lastActivePage=pageZebraText;
+				}
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.space.scaleView*=1.428;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.space.scaleView*=0.7;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<mx:ViewStack id="vsZebra" width="100%" height="100%">
+		<s:NavigatorContent width="100%" height="100%" label="斑马">
+			<editor2:ZebraDisplay5 id="pageZebraDisplay"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="视差">
+			<dish:ZebraDish id="pageZebraWalk"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="动物">
+			<animal:ZanimalEditor4 id="pageZanimal"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="树">
+			<ztree:ZtreeEditor3 id="pageZtree"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="森林">
+			<zforest:ZforestEditor3 id="pageZforest"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="森林检查">
+			<check:ZforestCheck3 id="pageZforestCheck"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="森林行走">
+			<walk:ZforestWalk3 id="pageZforestWalk"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="视频">
+			<editor2:ZebraVideo2 id="pageZebraVideo"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="全景">
+			<zpano:ZpanoDisplay3 id="pageZpanoDisplay"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="文字">
+			<editor2:ZebraText id="pageZebraText"/>
+		</s:NavigatorContent>
+	</mx:ViewStack>
+	<s:ButtonBar id="bbZebra" y="10" change="bbZebra_changeHandler(event)" dataProvider="{vsZebra}"
+				 horizontalCenter="0" mouseDown="event.stopImmediatePropagation()"
+				 mouseUp="event.stopImmediatePropagation()"/>
+	<s:HGroup visible="false" bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+</s:Group>

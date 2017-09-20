@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui1="azura.avalon.maze3.ui.*"
+		 xmlns:woo="azura.avalon.maze3.ui.woo.*"
+		 xmlns:seeker="azura.avalon.maze3.ui.seeker.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_Maze3;
+			
+			import azura.avalon.maze.data.Dump;
+			import azura.avalon.maze3.data.Mroom;
+			import azura.avalon.maze3.service.Maze3SeekerEditNet;
+			import azura.avalon.maze3.service.Maze3WooEditNet;
+			import azura.banshee.engine.Stage3DRoot;
+			import azura.banshee.engine.Statics;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.g2d.LoaderInitializer;
+			import azura.banshee.zforest.Zforest;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			private var canvas:LayerMaze3Seeker;
+			
+			private var sn:Maze3SeekerEditNet;
+			
+			private var this_:Maze3SeekerEdit;
+			
+			[Bindable]
+			public var room:Mroom=new Mroom();
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Statics.stage=stage;
+				LoaderInitializer.singleton();
+				
+				this_=this;
+				
+				Stage3DRoot.singleton().init(stage,holder,onInit);
+				function onInit():void{
+					canvas=new LayerMaze3Seeker(G2dEngine.singleton().singleLayer,stage);
+					canvas.panel=this_;
+//					wooPanel.canvas=canvas;
+				}
+				
+				var config:Config_Maze3=new Config_Maze3();
+				config.onReady.add(onReady);
+				function onReady():void{
+					sn=new Maze3SeekerEditNet(config);
+					Maze3SeekerEditNet.cs.cs.hub.register(pageHelix.drHelix);
+				}
+			}		
+			
+			protected function fbLoadDump_READYHandler(event:Event):void
+			{
+				var data:ZintBuffer=FileUtil.read(fbLoadDump.file);
+				data.uncompress();
+				
+				canvas.dump.fromBytes(data);
+				canvas.reload();
+			}
+			
+			protected function drRoom_SELECTHandler(event:Event):void
+			{
+				var data:ZintBuffer=Gal4.readSync(room.me5Zforest);
+				if(data==null){
+					canvas.clear();
+					return;
+				}
+				
+				data.uncompress();
+				
+				var zf:Zforest=new Zforest();
+				zf.fromBytes(data);
+				room.zmax=zf.base.zMax;
+				
+				canvas.loadZforest(zf);
+			}
+			
+			protected function btnDump_clickHandler(event:MouseEvent):void
+			{
+				Maze3WooEditNet.cs.cs.dump(onDump);
+			}
+			
+			private function onDump(zb:ZintBuffer):void{
+				var dump:Dump=new Dump();
+				dump.maze.fromBytes(zb);
+				dump.eyeRoomUID=room.uid;
+				dump.eyeX=canvas.root.xView;
+				dump.eyeY=canvas.root.yView;
+				
+				var data:ZintBuffer=dump.toBytes();
+				data.compress();
+				
+				var save:FileReference=new FileReference();
+				save.save(data,"dump.zmaze");
+			}			
+			
+			protected function fbCache_READYHandler(event:Event):void
+			{
+				new GalPack4().loadFrom(fbCache.file);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup y="10" right="10">		
+		<file:FileButton6 id="fbLoadDump" label="load dump" _ext="*.zmaze"
+						  READY="fbLoadDump_READYHandler(event)"/>
+		<file:FileButton6 id="fbCache" right="0" top="0" label="load cache"
+						  READY="fbCache_READYHandler(event)"/>
+	</s:HGroup>
+	<mx:ViewStack id="vsSeeker" width="100%" height="100%">
+		<s:NavigatorContent width="100%" height="100%" label="Hexlix Editor">
+			<seeker:HelixFrame id="pageHelix"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent width="100%" height="100%" label="Show Editor">
+			<seeker:ShowFrame id="pageShow"/>
+		</s:NavigatorContent>
+	</mx:ViewStack>
+	<s:ButtonBar id="bbSeeker" y="10" dataProvider="{vsSeeker}" horizontalCenter="0"
+				 mouseDown="event.stopImmediatePropagation()"
+				 mouseUp="event.stopImmediatePropagation()"/>
+</s:Group>

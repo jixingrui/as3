@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Image xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="image1_creationCompleteHandler(event)"
+		 implements="azura.common.algorithm.mover.FramerI" mouseMove="toStatic()"
+		 mouseOut="toAnime()" smooth="true" touchBegin="toStatic()" touchEnd="toAnime()"
+		 touchMove="toStatic()" touchOut="toAnime()">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.algorithm.mover.Cycler;
+			import azura.common.ui.shine.ShineButtonLoaderI;
+			
+			import mx.events.FlexEvent;
+			
+			public static var syncLoader:ShineButtonLoaderI;
+						
+			public var bd:BitmapData;
+			
+			private var urlStatic_:String;
+			private var frameList:Vector.<String>;
+			
+			private var idxCurrentFrame:int=0;
+			
+			private var cycler:Cycler=new Cycler();
+//			private var player:TimerFps=new TimerFps(1);
+			
+//			private var lock:Timer;
+			private var anim_static:Boolean=true;
+			
+			public function toAnime():void{
+				if(anim_static)
+					return;
+				
+				anim_static=true;
+				cycler=new Cycler();
+				cycler.target=this;
+				cycler.fps=4;
+				
+				dispatchEvent(new Event("ANIMATION"));
+			}
+			
+			public function toStatic():void{
+				if(!anim_static)
+					return;
+				
+				anim_static=false;
+				cycler.dispose();
+				loadSource(urlStatic_);
+				
+				dispatchEvent(new Event("STATIC"));
+			}
+			
+//			public function changeState():void{
+//				if(lock!=null)
+//					return;
+//				
+//				lockIt();
+//				
+//				if(anim_static){
+//					anim_static=false;
+//					cycler.dispose();
+//					loadSource(urlStatic_);
+//					
+//					dispatchEvent(new Event("STATIC"));
+//				}else{
+//					anim_static=true;
+//					cycler=new Cycler();
+//					cycler.target=this;
+//					cycler.fps=4;
+//					
+//					dispatchEvent(new Event("ANIMATION"));
+//				}
+//			}
+//			
+//			private function lockIt():void{
+//				lock=new Timer(1000,1);
+//				lock.addEventListener(TimerEvent.TIMER_COMPLETE,unlockIt);
+//				lock.start();
+//			}
+			
+//			private function unlockIt(event:TimerEvent=null):void{
+//				lock.removeEventListener(TimerEvent.TIMER_COMPLETE,unlockIt);
+//				lock.stop();
+//				lock=null;
+//			}
+			
+			public function set urlStatic(url:String):void{
+				this.urlStatic_=url;
+			}
+			
+			public function set urlAnim(urlList:Vector.<String>):void{
+				this.frameList=urlList;
+				
+				cycler.target=this;
+				cycler.fps=4;
+//				player.add(cycler);
+			}
+			
+			private function loadSource(url:String):void{				
+				var bdOld:BitmapData=bd;
+				this.bd=syncLoader.loadBitmapData(url);
+				this.source=bd;
+				if(bdOld!=null){
+					this.x=this.x+bdOld.width/2-bd.width/2;
+					this.y=this.y+bdOld.height/2-bd.height/2;
+				}
+			}
+			
+			public function get frameCount():int
+			{
+				return frameList.length;
+			}
+			
+			public function showFrame(frame:int=-1):void
+			{
+				loadSource(frameList[frame]);
+			}
+			
+			public function get nextFrameIdx():int
+			{
+				return 0;
+			}
+			
+			protected function image1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var list:Vector.<String>=new Vector.<String>();
+				for (var i:int=1;i<=4;i++){
+					list.push("zzz/common/dot/shine/"+i+".png");
+				}
+				urlAnim=list;
+				
+				urlStatic="zzz/common/dot/red.png";
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="STATIC", type="flash.events.Event")]
+		[Event(name="ANIMATION", type="flash.events.Event")]
+	</fx:Metadata>
+</s:Image>

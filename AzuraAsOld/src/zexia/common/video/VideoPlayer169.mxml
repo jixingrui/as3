@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:util="lift.util.*"
+		 xmlns:m1="lift.m1.*"
+		 xmlns:sb="lift.util.sb.*"
+		 xmlns:shine="azura.common.ui.shine.*"
+		 width="100%" height="100%" creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.util.Fork;
+			
+			import mx.events.FlexEvent;
+			
+			public static var scale:Number=1;
+			
+			private var fork:Fork=new Fork(forkReady,"creation","file");
+			
+			private var file:String;
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			private var isPause:Boolean;		
+			
+//			private var sv:StageVideo;
+			private var sv:Video;
+			
+			public var resList:Vector.<String>;
+			
+			private var idx:int;
+			
+			private var timer:Timer;
+			private var duration:Number = 0;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				fork.ready("creation");
+				bar.track.mouseEnabled=false;
+			}
+			
+			public function play(idx:int):void{
+				if(resList==null)
+					throw new Error();
+				
+				idx=(idx+resList.length)%resList.length;
+				this.idx=idx;
+				playUrl(resList[idx]);
+			}
+			
+			public function playUrl(url:String):void{
+				this.file=url;
+				bar.value=0;
+				fork.ready("file");
+			}
+			
+			private function forkReady():void{
+				
+				nc=new NetConnection();
+				nc.addEventListener(NetStatusEvent.NET_STATUS,onNetStatusNC);
+				nc.connect(null);
+				
+				ns=new NetStream(nc);
+				ns.addEventListener(NetStatusEvent.NET_STATUS,onNetStatusNS);
+				ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR,ignore);
+				ns.client=this;
+				ns.inBufferSeek=true;
+				
+//				sv = stage.stageVideos[0];
+				sv=new Video();
+				sv.smoothing=true;
+				holder.addChild(sv);
+				sv.attachNetStream(ns);
+				
+				ns.play(file);
+				resume();
+			}
+			
+			private function onNetStatusNC(nse:NetStatusEvent):void{
+				//				trace(nse.info.code,"nc",this);
+			}
+			
+			private function onNetStatusNS(nse:NetStatusEvent):void{
+				//				trace(nse.info.code,"ns",this);
+				if(nse.info.code=="NetStream.Play.Stop"){
+					close();
+					forkReady();
+					pause();
+				}
+			}
+			
+			public function ignore(ae:AsyncErrorEvent):void{
+				trace("ignore",ae,this);
+			}
+			
+			public function onMetaData(info:Object):void{
+				var vp:Rectangle=new Rectangle();
+				vp.width=stage.stageWidth*scale;
+				vp.height=vp.width*info.height/info.width;
+				vp.x=(stage.stageWidth-vp.width)/2;
+				vp.y=(stage.stageHeight-vp.height)/2;
+								
+//				sv.width=2048;
+//				sv.height=2048*720/1280;
+//				sv.y=(1536-sv.height)/2;
+				
+				sv.width=this.width;
+				sv.height=this.width*720/1280;
+				sv.y=(this.height-sv.height)/2;
+								
+				duration = info.duration;
+				bar.maximum=duration;
+			}
+			
+			public function onPlayStatus(info:Object):void{
+				trace("play status",info,this);
+			}
+			
+			private function close():void{
+				isPause=false;
+				btnPlay.visible=false;
+				btnPause.visible=true;
+				if(sv!=null)
+					sv.attachNetStream(null);
+				if(ns!=null)
+					ns.close();
+			}
+			
+			private function pause():void{
+				ns.pause();
+				btnPlay.visible=true;
+				btnPause.visible=false;
+			}
+			
+			private function resume():void{
+				ns.resume();
+				
+				if(timer==null){
+					timer=new Timer(100,0);
+					timer.addEventListener(TimerEvent.TIMER,tick);
+				}
+				timer.start();
+				
+				btnPlay.visible=false;
+				btnPause.visible=true;
+			}
+			
+			private function tick(event:TimerEvent):void{
+				bar.value=ns.time;
+			}
+			
+			protected function bar_changeHandler(event:Event):void
+			{
+				ns.pause();
+				ns.seek(bar.value);
+				timer.stop();
+				setTimeout(resume,500);
+			}
+			
+			protected function btnClose_SELECTHandler(event:Event):void
+			{
+				close();
+				dispatchEvent(new Event(Event.CLOSE,false));
+			}
+			
+			protected function btnPlay_SELECTHandler(event:Event):void
+			{
+				resume();
+			}
+			
+			protected function btnPause_SELECTHandler(event:Event):void
+			{
+				pause();
+			}
+			
+			protected function btnPrev_SELECTHandler(event:Event):void
+			{
+				close();
+				play(idx-1);
+			}
+			
+			protected function btnNext_SELECTHandler(event:Event):void
+			{
+				close();
+				play(idx+1);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="close", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HSlider id="bar" bottom="0" width="100%" change="bar_changeHandler(event)"
+			   horizontalCenter="0" minimum="0" showDataTip="true"
+			   skinClass="zexia.common.video.HSliderSkinLarge"/>
+	<shine:ShineButton id="btnClose" right="20" top="20" SELECT="btnClose_SELECTHandler(event)"
+					   urlNormal="zzz/common/player/close.png"
+					   urlShine="zzz/common/player/b/close.png"/>
+	<shine:ShineButton id="btnPlay" visible="false" bottom="10" height="126" horizontalCenter="0"
+					   SELECT="btnPlay_SELECTHandler(event)" urlNormal="zzz/common/player/play.png"
+					   urlShine="zzz/common/player/b/play.png"/>
+	<shine:ShineButton id="btnPause" visible="true" bottom="20" height="126" horizontalCenter="0"
+					   SELECT="btnPause_SELECTHandler(event)"
+					   urlNormal="zzz/common/player/pause.png"
+					   urlShine="zzz/common/player/b/pause.png"/>
+	<shine:ShineButton id="btnPrev" visible="false" bottom="10" height="126" horizontalCenter="-120"
+					   SELECT="btnPrev_SELECTHandler(event)" urlNormal="zzz/common/player/prev.png"
+					   urlShine="zzz/common/player/b/prev.png"/>
+	<shine:ShineButton id="btnNext" visible="false" bottom="10" height="126" horizontalCenter="120"
+					   SELECT="btnNext_SELECTHandler(event)" urlNormal="zzz/common/player/next.png"
+					   urlShine="zzz/common/player/b/next.png"/>
+</s:Group>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  creationComplete="group1_creationCompleteHandler(event)" gap="2"
+		  implements="azura.common.ui.grid.GridI2,azura.touch.mouserOld.MouserDragI">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.grid.GridMotor2;
+			import azura.common.ui.grid.ItemI;
+			import azura.helios.hard10.hub.HardItem;
+			import azura.helios.hard10.ui.HardEvent;
+			import azura.touch.mouserOld.MouserDrag;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			private var motor:GridMotor2;
+			
+			private var md:MouserDrag;
+			
+			[Bindable]
+			public var selectedItem:HardItemUI;
+			
+			[Bindable]
+			public var showPlus:Boolean=false;
+			
+			[Bindable]
+			public var selectedIdx:int=-1;
+			
+			private var uiList:Vector.<HardItemUI>=new Vector.<HardItemUI>();
+			
+			internal var largeFrameX:int;
+			internal var largeFrameY:int;
+			
+			private var itemHeight:int=30;
+			
+			public var pageSize:int;
+			
+			public var noMoreData:Boolean;
+			
+			//===================== init =======================
+			private function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				holder.percentWidth=NaN;
+				holder.percentHeight=NaN;
+				holder.width=holder.width;
+				holder.height=holder.height;
+				
+				motor=new GridMotor2(this,holder.width,holder.height,holder.width,itemHeight,true,30);
+				
+				md=new MouserDrag(holder);
+				md.listener=this;
+			}
+			
+			//========================= user activity ======================
+			public function onDragStart(md:MouserDrag):void{
+				motor.dragStart();
+			}
+			public function onDragMove(md:MouserDrag):void{
+				motor.dragMove(md.delta.x,md.delta.y);
+			}
+			public function onDragEnd(md:MouserDrag):void{
+				motor.dragEnd();
+			}
+			
+			public function jump():void{				
+				dispatchEvent(new Event("JUMP"));
+			}
+			
+			//==================== grid =====================
+			public function gridMoveItem(item:ItemI,x:Number,y:Number):void{
+				var iv:IVisualElement=item as IVisualElement;
+				iv.x=x-iv.width/2+holder.width/2+largeFrameX;
+				iv.y=y-iv.height/2+largeFrameY;
+			}
+			
+			public function gridMoveShell(x:Number, y:Number):void
+			{
+				for each(var item:HardItemUI in uiList){
+					item.x=item.x-largeFrameX+x;
+					item.y=item.y-largeFrameY+y;
+				}
+				
+				largeFrameX=x;
+				largeFrameY=y;
+			}
+			
+			public function showHead(value:Boolean):void
+			{
+				topLine.visible=!value;
+			}
+			
+			public function showTail(value:Boolean):void
+			{
+				bottomLine.visible=!value;
+				
+//				trace("bottom visible",value);
+				if(value==false&&!noMoreData){
+//					trace("ask more",pageSize,name);
+					dispatchEvent(new Event("ASKMORE"));
+				}
+			}
+			
+			public function set gridPageSize(value:int):void{
+				pageSize=value;
+			}
+			
+			public function set gridPageCount(value:int):void
+			{
+			}
+			
+			public function set gridAtPage(idx:int):void
+			{
+			}
+			
+			//================== from host ===================
+			public function resize(height:int):void{
+				holder.height=height-8;
+				motor.resize(holder.width,holder.height,holder.width,itemHeight);
+			}
+			
+			public function trySize(num:int,maxHeight:int):int{
+				var wanted:int=num*itemHeight+8;
+				if(wanted<=maxHeight){
+					return wanted;
+				}else{
+					num=(maxHeight-8)/itemHeight;
+					return num*itemHeight+8;
+				}
+			}
+			
+			public function append(more:Vector.<HardItem>):void
+			{
+				for each(var n:HardItem in more){
+					var hi:HardItemUI=new HardItemUI();
+					hi.list=this;
+					hi.node=n;
+					addItem(hi);
+				}
+			}
+			
+			public function addItem(item:HardItemUI):void{
+				holder.addElement(item);
+				item.width=holder.width;
+				uiList.push(item);
+				motor.addItem(item);
+			}
+			
+//			public function selectByIdx(idx:int):void{
+//				uiList.
+//			}
+			
+			public function select(item:HardItemUI):void{
+				if(selectedItem==item)
+					return;
+				
+				if(selectedItem!=null){
+					selectedItem.unselect();
+				}
+				selectedItem=item;
+				selectedIdx=uiList.indexOf(item);
+				selectedItem.select();
+				
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			public function unselect():void{
+				if(selectedItem!=null){
+					selectedItem.unselect();
+					selectedItem=null;
+					selectedIdx=-1;
+					
+					dispatchEvent(new Event("UNSELECT"));
+				}else{
+					//					trace("unselect duplicate",name);
+				}
+			}
+			
+			public function rename(newName:String):void{
+				var event:HardEvent=new HardEvent(HardEvent.Rename_L);
+				event.newName=newName;
+				dispatchEvent(event);
+			}
+			
+			public function update(idx:int,node:HardItem):void{
+				var item:HardItemUI=motor.getItem(idx) as HardItemUI;
+				item.node.eat(node);
+//				select(item);
+			}
+			
+			public function removeItem(idx:int):void{
+				unselect();
+				var target:HardItemUI=uiList[idx];
+				holder.removeElement(target);
+				uiList.splice(idx,1);
+				motor.removeItemAt(idx);
+			}
+			
+			public function clear():void{
+				unselect();
+				motor.clear();
+				while(uiList.length>0){
+					holder.removeElement(uiList.pop());
+				}
+			}
+						
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata> 
+		[Event(name="SELECT", type="flash.events.Event")] 
+		[Event(name="RENAME_L", type="azura.helios.hard10.ui.HardEvent")] 
+		[Event(name="JUMP", type="flash.events.Event")] 
+		[Event(name="ASKMORE", type="flash.events.Event")] 
+	</fx:Metadata> 
+	<s:Line id="topLine" width="100%">
+		<s:stroke>
+			<s:SolidColorStroke caps="square" color="0xff0000" weight="2"/>
+		</s:stroke>
+	</s:Line>
+	<s:Group id="holder" width="100%" height="100%" mouseOut="event.stopImmediatePropagation()">
+		<s:Rect width="100%" height="100%">
+			<s:fill><s:SolidColor alpha="1" color="0"/></s:fill>
+		</s:Rect>
+	</s:Group>
+	<s:Line id="bottomLine" width="100%">
+		<s:stroke>
+			<s:SolidColorStroke caps="square" color="0xff0000" weight="2"/>
+		</s:stroke>
+	</s:Line>
+</s:VGroup>

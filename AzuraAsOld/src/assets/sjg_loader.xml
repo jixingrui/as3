@@ -1,0 +1,11 @@
+﻿<root>
+	<product>手机逛</product>
+	<website>www.shoujiguang.com</website>
+	<loaderVersion>35</loaderVersion>
+	<bgs>		
+		<url>http://download.shoujiguang.com/sjg_loading.jpg</url>
+	</bgs>
+	<targetVersion>431</targetVersion>
+	<targetSwf>http://download.shoujiguang.com/sjg_core.swf</targetSwf>
+	<targetConfig>http://download.shoujiguang.com/sjg_config.xml</targetConfig>
+</root>

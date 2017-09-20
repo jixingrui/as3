@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:drass6="azura.hellios.drass6.*"
+				   xmlns:itemRenderer="azura.hellios.drass6.itemRenderer.*"
+				   width="128" height="100%" currentState="browse"
+				   initialize="bordercontainer_initializeHandler(event)">
+	<s:states>
+		<s:State name="browse"/>
+		<s:State enterState="ti.setFocus()" name="add"/>
+		<s:State enterState="ti.setFocus()" name="search"/>
+	</s:states>
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.itemRenderer.DrassEvent;
+			import azura.hellios.drass6.itemRenderer.LowRenderer;
+			
+			import common.collections.ZintBuffer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			//s2c
+			private static const s2c_upList:int=1;
+			private static const s2c_lowItem:int=2;
+			private static const s2c_lowList:int=3;
+			private static const s2c_lowList_ceil:int=4;
+			private static const s2c_lowList_floor:int=5;
+			private static const s2c_lowList_ceil_floor:int=6;
+			//			private static const s2c_totalLength:int = 7;
+			//c2s
+			private static const c2s_add:int=10;
+			private static const c2s_rename:int=11;
+			private static const c2s_delete:int=12;
+			private static const c2s_pgUp:int=13;
+			private static const c2s_pgDown:int=14;
+			private static const c2s_pgSize:int=15;
+			private static const c2s_search:int=16;
+			private static const c2s_reOrder:int=17;
+			private static const c2s_save:int=18;
+			private static const c2s_select:int=19;
+			
+			//			private static const c2s_rightClickUp:int=18;
+			//			private static const c2s_rightClickLow:int=19;
+			
+			//			private static const c2s_drag:int=17;
+			
+			//drag
+			public static const drassId:String='drassId';
+			public static const drassPos:String='drassPos';
+			public static const drassPosUp:String='drassPosUp';
+			public static const drassPosLow:String='drassPosLow';
+			public static const drassDragIndex:String='drassDragIndex';
+			
+			private static var id_drassList:Dictionary=new Dictionary();
+			
+			public static function _receive(zb:ZintBuffer):void{
+				var id:int=zb.readZint();
+				var drassList:Vector.<Drass6>=getDrassList(id);
+				for each(var drass:Drass6 in drassList){
+					var cln:ZintBuffer=zb.clone();
+					drass.receivePrivate(cln);
+				}
+			}
+			
+			private static function getDrassList(id:int):Vector.<Drass6>{
+				var drassList:Vector.<Drass6>=id_drassList[id];
+				if(drassList==null){
+					drassList=new Vector.<Drass6>();
+					id_drassList[id]=drassList;
+				}
+				return drassList;
+			}
+			
+			public static function checkPageAll():void{
+				for each(var dv:Vector.<Drass6> in id_drassList){
+					for each(var ds:Drass6 in dv){
+						ds.checkPageSize();
+					}
+				}
+			}
+			
+			public var _idDrass:int;
+			public var _proxy:DrassProxyServerI;
+			public var _editor:DrassEditorI;
+			[Bindable]
+			public var _itemSelected:Boolean;
+			public var _itemName:String;
+			
+			[Bindable]
+			public var _label:String;
+			private var pageSizeOld:int;		
+			private var filter:String;
+			
+			[Bindable]
+			public var _canAdd:Boolean;
+			
+			public function _clear():void{
+				listLow.selectedIndex=-1;
+				_itemSelected=false;
+				listLow.dataProvider=null;
+				_editor._clear();
+			}
+			
+			protected function bordercontainer_initializeHandler(event:FlexEvent):void
+			{
+				getDrassList(_idDrass).push(this);
+			}
+			
+			private function receivePrivate(zb:ZintBuffer):void{
+				var type:int=zb.readZint();
+				switch(type)
+				{
+					case s2c_lowItem:{
+						var found:Boolean=false;
+						var update:Node=new Node(zb.readBytes_());
+						for each(var oldNode:Node in listLow.dataProvider){
+							if(oldNode.id==update.id){
+								found=true;
+								oldNode.name=update.name;
+								oldNode.soil=update.soil;
+								break;
+							}
+						}
+//						if(!found){
+//							listLow.dataProvider.addItem(update);
+//							listLow.dataProvider=listLow.dataProvider;
+//						}
+						if(selectedNode!=null && selectedNode.id==update.id){
+							_editor._read(selectedNode);
+						}
+					}
+						break;
+					case s2c_lowList:{
+						btnPgUp.enabled=true;
+						btnPgDn.enabled=true;
+						fillLow(zb);
+					}
+						break;
+					case s2c_lowList_ceil:{
+						btnPgUp.enabled=false;
+						btnPgDn.enabled=true;	
+						fillLow(zb);
+					}
+						break;
+					case s2c_lowList_floor:{
+						btnPgUp.enabled=true;
+						btnPgDn.enabled=false;
+						fillLow(zb);
+					}
+						break;
+					case s2c_lowList_ceil_floor:{
+						btnPgUp.enabled=false;
+						btnPgDn.enabled=false;
+						fillLow(zb);
+					}
+						break;
+					
+					default:
+					{
+						break;
+					}
+				}
+			}
+			
+			private function fillLow(zb:ZintBuffer):void{
+				var ll:ArrayCollection=new ArrayCollection();
+				var length:int=zb.readZint();
+				for(var i:int=0;i<length;i++){
+					var item:Node=new Node(zb.readBytes_());
+					item.idxLocal=i;
+					ll.list.addItem(item);
+				}
+				listLow.dataProvider=ll;
+				
+				if(_editor!=null)
+					_editor._clear();
+			}
+			
+			private function newHeader():ZintBuffer{
+				var zb:ZintBuffer=new ZintBuffer();
+				zb.writeZint(_idDrass);
+				return zb;
+			}
+			
+			private function c2s(zb:ZintBuffer):void{
+				if(_proxy!=null)
+					_proxy.sendToDrassServer(zb);
+			}
+			
+			private function get pageSize():int{
+				return listLow.height/24;
+			}
+			
+			protected function ti_add_enterHandler(event:FlexEvent):void
+			{
+				if(pageSizeOld==0)
+					checkPageSize();
+				
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_add);
+				zb.writeUTF(ti.text);
+				//				zb.writeZint(listLow.selectedIndex);
+				c2s(zb);
+				
+				currentState='browse';
+			}
+			
+			protected function ti_search_enterHandler(event:FlexEvent):void
+			{
+				filter=ti.text;
+				
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_search);
+				zb.writeUTF(filter);
+				c2s(zb);
+				
+				currentState='browse';
+			}		
+			
+			public function checkPageSize():void{
+				
+				if(pageSize>0 && pageSize!=pageSizeOld){
+					pageSizeOld=pageSize;
+					var zb:ZintBuffer=newHeader();
+					zb.writeZint(c2s_pgSize);
+					zb.writeZint(pageSize);
+					c2s(zb);
+					
+					//					trace(this.id+": page size= "+pageSize);
+				}
+			}
+			
+			protected function btnPgDn_clickHandler(event:MouseEvent):void
+			{
+				checkPageSize();
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_pgDown);
+				c2s(zb);
+			}
+			
+			protected function btnPgUp_clickHandler(event:MouseEvent):void
+			{
+				checkPageSize();
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_pgUp);
+				c2s(zb);
+			}
+			
+			protected function btnDelete_clickHandler(event:MouseEvent):void
+			{				
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_delete);
+				zb.writeZint(listLow.selectedIndex);
+				c2s(zb);
+			}
+			
+			protected function btnRename_clickHandler(event:MouseEvent):void
+			{
+				listLow.dragEnabled=false;
+				var lr:LowRenderer=listLow.dataGroup.getElementAt(listLow.selectedIndex) as LowRenderer;
+				lr._edit();
+			}
+			
+			protected function listUp_mouseUpHandler(event:MouseEvent):void
+			{
+				_unselect();
+			}
+			
+			public function _unselect():void{
+				listUp.selectedIndex=-1;
+				listLow.selectedIndex=-1;
+				_itemSelected=false;
+				
+				if(_editor!=null)
+					_editor._clear();
+			}
+			
+			public function reOrder(fromIdx:int,toIdx:int):void{
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_reOrder);
+				zb.writeZint(fromIdx);
+				zb.writeZint(toIdx);
+				c2s(zb);
+			}
+			
+			protected function btnSearch_clickHandler(event:MouseEvent):void
+			{
+				this.currentState='search';
+				ti.text=filter;
+			}
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				this.currentState='add';
+				ti.text='';
+			}
+			
+			protected function listLow_RenameHandler(event:DrassEvent):void
+			{
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_rename);
+				zb.writeZint(listLow.selectedIndex);
+				zb.writeUTF(event.newName);
+				c2s(zb); 
+			}
+			
+			protected function listLow_RenameCompleteHandler(event:Event):void
+			{
+				listLow.dragEnabled=true;
+			}
+			
+			protected function listLow_RightClickHandler(event:DrassEvent):void
+			{
+				trace('right click: '+event.idxLocal);
+			}
+			
+			protected function listLow_changeHandler(event:IndexChangeEvent):void
+			{
+				if(listLow.selectedIndex==-1){
+					trace('list unselect');
+					return;
+				}
+				
+				_itemSelected=true;
+				_itemName=selectedNode.name;
+				
+				if(_editor!=null){
+					_editor._clear();
+					if(selectedNode.soil==null || selectedNode.soil.bytesAvailable==0){
+						selectedNode.soil=_editor._save();
+					}
+					_editor._read(selectedNode);
+				}
+				
+				
+				var zb:ZintBuffer=newHeader();
+				zb.writeZint(c2s_select);
+				zb.writeZint(listLow.selectedIndex);
+				c2s(zb);
+			}
+			
+			private function get selectedNode():Node{
+				var node:Node=listLow.selectedItem as Node;
+				if(node!=null && node.soil!=null){
+					node.soil.position=0;
+				}
+				return node;
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				_save();
+			}
+			
+			public function _save():void{
+				if(_editor!=null){
+					var node:Node=selectedNode;
+					node.soil=_editor._save();
+					node.soil.position=0;
+					
+					var zb:ZintBuffer=newHeader();
+					zb.writeZint(c2s_save);
+					zb.writeZint(listLow.selectedIndex);
+					zb.writeBytes_(node.soil);
+					
+					c2s(zb);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup id="vgDrass" width="100%" height="100%" gap="3" rightClick=";">
+		<s:HGroup width="100%" gap="3">
+			<s:Label id="lbLabel" width="100%" height="100%" fontSize="16" text="{_label}"/>
+			<s:Button id="btnSave" width="25" click="btnSave_clickHandler(event)"
+					  icon="@Embed('../../../assets/floppy.png')"
+					  enabled.add="false"
+					  enabled.browse="{listLow.selectedItem!=null}"
+					  enabled.search="false"/>
+		</s:HGroup>
+		<itemRenderer:UpList id="listUp" width="100%" host="{this}"
+							 mouseUp="listUp_mouseUpHandler(event)"
+							 enabled.add="false"
+							 enabled.search="false"/>
+		<s:HGroup width="100%" gap="3">
+			<s:Button id="btnAdd" width="25" icon="@Embed('../../../assets/cross.png')"
+					  chromeColor.add="#FF0000" click.add="this.currentState='browse'"
+					  enabled.add="{_canAdd}"
+					  click.browse="btnAdd_clickHandler(event)" enabled.browse="{_canAdd}"
+					  enabled.search="false"/>
+			<s:Button id="btnPgDn" width="100%" click="btnPgDn_clickHandler(event)"
+					  icon="@Embed('../../../assets/arrow_down_right.png')"
+					  enabled.add="false"
+					  enabled.search="false"/>
+			<s:Button id="btnSearch" width="25" click="btnSearch_clickHandler(event)"
+					  enabled.add="false"
+					  icon.browse="@Embed('../../../assets/magnifier.png')"
+					  chromeColor.search="#FF0000" click.search="this.currentState='browse'"/>
+		</s:HGroup>
+		<s:TextInput id="ti" includeIn="search,add" width="100%"
+					 enter.add="ti_add_enterHandler(event)"
+					 enter.search="ti_search_enterHandler(event)"/>
+		<itemRenderer:LowList id="listLow" width="100%" height="100%"
+							  _Rename="listLow_RenameHandler(event)"
+							  _RenameComplete="listLow_RenameCompleteHandler(event)"
+							  _RightClick="listLow_RightClickHandler(event)"
+							  change="listLow_changeHandler(event)" host="{this}"
+							  enabled.add="false"
+							  enabled.search="false"/>
+		<s:HGroup width="100%" gap="3">
+			<s:Button id="btnDelete" width="25" click="btnDelete_clickHandler(event)"
+					  icon="@Embed('../../../assets/trashcan.png')"
+					  enabled.add="false"
+					  enabled.browse="{listLow.selectedItem!=null}"
+					  enabled.search="false"/>
+			<s:Button id="btnPgUp" width="100%" click="btnPgUp_clickHandler(event)"
+					  icon="@Embed('../../../assets/arrow_up_left.png')"
+					  enabled.add="false"
+					  enabled.search="false"/>
+			<s:Button id="btnRename" width="25" click="btnRename_clickHandler(event)"
+					  icon="@Embed('../../../assets/wrench.png')"
+					  enabled.add="false"
+					  enabled.browse="{listLow.selectedItem!=null}"
+					  enabled.search="false"/>
+		</s:HGroup>		
+	</s:VGroup>
+</s:BorderContainer>

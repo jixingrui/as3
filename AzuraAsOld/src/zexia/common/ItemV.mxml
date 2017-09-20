@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:shine="azura.common.ui.shine.*"
+		 implements="azura.common.ui.grid.ItemI">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.touch.watcherOld.WatcherDrag;
+			
+			import org.osflash.signals.Signal;
+			
+//			private var _gridIdx:int;
+			private var _gridVisible:Boolean;
+			
+			public var onSelect:Signal=new Signal(ItemV);
+			public var onUnselect:Signal=new Signal(ItemV);
+			
+			public function get gridVisible():Boolean
+			{
+				return visible;
+			}
+			
+			public function set gridVisible(value:Boolean):void
+			{
+				visible = value;
+			}
+			
+//			public function get gridIdx():int
+//			{
+//				return _gridIdx;
+//			}
+//			
+//			public function set gridIdx(value:int):void
+//			{
+//				_gridIdx = value;
+//			}
+			
+			public function gridMoveItem(x:Number,y:Number):void{
+				trace("grid move item",name);
+			}
+			
+			public function set gridAlpha(value:Number):void
+			{
+				sb.alpha=value;
+			}
+			
+			protected function sb_SELECTHandler(event:Event):void
+			{
+//				trace("select");
+				onSelect.dispatch(this);
+			}
+			
+			protected function sb_UNSELECTHandler(event:Event):void
+			{
+//				trace("unselect");
+				onUnselect.dispatch(this);
+			}
+			
+			protected function sb_SKINCHANGEHandler(event:Event):void
+			{
+				sb.x=-sb.bd.width/2;
+				sb.y=-sb.bd.height/2;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<!--<s:Image id="sb" click="sb_clickHandler(event)" complete="image1_completeHandler(event)" source="assets/m.png"/>-->
+	<shine:ShineButton id="sb" SELECT="sb_SELECTHandler(event)"
+					   SKINCHANGE="sb_SKINCHANGEHandler(event)" UNSELECT="sb_UNSELECTHandler(event)"/>
+</s:Group>

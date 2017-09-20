@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:ui1="azura.avalon.maze.ui.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  width="100%" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze.data.EventCenter;
+			import azura.avalon.maze.data.Item;
+			import azura.avalon.maze3.data.Mdoor;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			
+			import mx.events.FlexEvent;
+			
+			private var _door:Mdoor=new Mdoor();
+			
+			public var canvas:LayerMaze3DoorEdit;
+			
+			[Bindable]
+			public function get door():Mdoor
+			{
+				return _door;
+			}
+			
+			public function set door(value:Mdoor):void
+			{
+				_door=value;
+			}
+						
+			protected function lsUid_changeHandler(event:Event):void
+			{
+//				item.uid=lsUid.string;
+//				EventCenter.saveItem.dispatch(item);
+				//				onSave.dispatch();
+			}
+			
+			protected function fbIcon_READYHandler(event:Event):void
+			{			
+				var master:String=new Gal4Pack().loadFrom(fbIcon.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				door.zebra.clear();
+				door.zebra.fromBytes(data);
+				canvas.showDoor(door);
+				
+				dispatchEvent(new Event("SAVE"));
+			}
+			
+			protected function btnMoveDoor_clickHandler(event:MouseEvent):void
+			{
+				EventCenter.moveItem.dispatch();
+			}
+			
+//			protected function btnRotateDoor_clickHandler(event:MouseEvent):void
+//			{
+//				canvas.rotateItem(0);
+//			}
+			
+//			protected function btnLookDoor_clickHandler(event:MouseEvent):void
+//			{
+//				canvas.lookAt(door.zebra.x,door.zebra.y);
+//			}
+			
+//			protected function lnScale_changeHandler(event:Event):void
+//			{
+//				item.scale=lnScale.number;
+//				EventCenter.saveItem.dispatch(item);
+//			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SAVE", type="flash.events.Event")]
+	</fx:Metadata>
+	<label:LabelString2 id="lsUid" label="UID" change="lsUid_changeHandler(event)" string="{door.uid}"/>
+	<s:HGroup width="100%">
+		<file:FileButton6 id="fbIcon" width="100%" label="load .zebra" _ext="*.zebra" color="0"
+						  READY="fbIcon_READYHandler(event)"/>
+		<s:Button id="btnMoveDoor" width="100%" label="move" click="btnMoveDoor_clickHandler(event)"
+				  color="0"/>
+	</s:HGroup>
+<!--	<s:HGroup width="100%">
+		<s:Button id="btnRotateDoor" width="100%" label="rotate 0"
+				  click="btnRotateDoor_clickHandler(event)" color="0"/>
+	</s:HGroup>-->
+	<label:LabelString2 label="To" color="0xff0000" editable="false" enabled="{door!=null}"
+					 string="{door.toDoorName}"/>
+</s:VGroup>

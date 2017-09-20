@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="common.ui.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui1="azura.common.ui.*"
+		 width="100%" height="100%" implements="azura.banshee.zebra.editor.PageI" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.zebra.Zebra;
+			import azura.banshee.zebra.Zmatrix;
+			import azura.banshee.zebra.node.ZebraNode;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			private var canvas:LayerZebra;
+			
+			[Bindable]
+			private var motive:Boolean;
+			
+			public function activate(on:Boolean):void{
+				if(on){
+					canvas=new LayerZebra(G2dEngine.singleton().singleLayer);
+				}else{
+					canvas.dispose();
+				}
+			}
+			
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZebra.file);				
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				var zebra:Zebra=new Zebra();
+				zebra.fromBytes(data);
+				lnFps.number=zebra.fps;
+				canvas.showZebra(zebra);
+				
+				motive=false;
+				if(zebra.type==Zebra.zmatrix){
+					motive=(Zmatrix(zebra.branch).type!=Zmatrix.zvline);
+				}
+				
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.actor.scaleLocal*=1.2;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.actor.scaleLocal*=0.8;
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				var frr:FileReference=new FileReference();
+				frr.save(canvas.actor.zebra.toBytes(),"modified.zebra");
+			}
+			
+			protected function lnFps_changeHandler(event:Event):void
+			{
+				canvas.actor.zebra.fps=lnFps.number;
+				canvas.actor.fps=lnFps.number;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+<!--	<s:SpriteVisualElement id="holder"/>-->
+	<s:HGroup x="10" y="50">		
+		<file:FileButton6 id="fbZebra" label="读取.zebra" _ext="*.zebra"
+						  READY="fbZebra_READYHandler(event)"/>
+		<s:Button id="btnSave" visible="{motive}" label="保存.zebra"
+				  click="btnSave_clickHandler(event)"/>
+	</s:HGroup>
+	<label:LabelNumber2 id="lnFps" visible="{motive}" x="30" y="100" label="fps"
+					  change="lnFps_changeHandler(event)" color="0xffffff"/>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+</s:Group>

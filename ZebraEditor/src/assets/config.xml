@@ -1,0 +1,17 @@
+﻿<root>
+	<maze2>
+		<host>luna</host>
+		<port>7442</port>
+	</maze2>
+	<maze3>
+		<host>luna</host>
+		<port>7443</port>
+	</maze3>
+	<mc5>
+		<t>http://succubus1/mc5t</t>
+		<s>http://succubus1/mc5s</s>
+		<m>http://succubus1/mc5m</m>
+		<l>http://succubus1/mc5l</l>
+		<x>http://succubus1/mc5x</x>
+	</mc5>
+</root>

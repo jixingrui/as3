@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:ui="azura.helios.hard10.ui.*"
+				   xmlns:list="azura.helios.hard10.ui.list.*"
+				   width="130" height="100%"
+				   creationComplete="bordercontainer1_creationCompleteHandler(event)"
+				   mouseDown="event.stopPropagation()"
+				   mouseUp="event.stopPropagation()">
+	<fx:Script>
+		<![CDATA[			
+			import azura.common.collections.Path;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.ui.alert.Toast;
+			import azura.helios.hard10.hub.HardItem;
+			import azura.helios.hard10.ie.HardCsI;
+			import azura.helios.hard10.ie.HardReaderI;
+			
+			import mx.events.FlexEvent;
+			
+			import org.osflash.signals.Signal;
+			
+			private var _id_:int;
+			
+			private var _cs:HardCsI;
+			
+			[Bindable]
+			public var title:String;
+			
+			[Bindable]
+			public var selectedItem:HardItem;
+			
+			[Bindable]
+			public var heldItem:HardItem;
+			
+			private var up_down:Boolean;
+			
+			[Bindable]
+			public var reader:HardReaderI;
+			
+			[Bindable]
+			public var upEmpty:Boolean=true;
+			
+			public var up:Vector.<HardItem>=new Vector.<HardItem>();
+			public var down:Vector.<HardItem>=new Vector.<HardItem>();
+			
+			private var _onSelect:Signal=new Signal();
+			
+			private var totalHeight:int;
+			
+			public function get onSelect():Signal
+			{
+				return _onSelect;
+			}
+			
+			public function get selected_is_up_down():Boolean{
+				return up_down;
+			}
+			
+			[Bindable]
+			public function get cs():HardCsI
+			{
+				return _cs;
+			}
+			
+			public function set cs(value:HardCsI):void
+			{
+				_cs = value;
+			}
+			
+			public function get _id():int{
+				return _id_;
+			}
+			
+			public function set _id(value:int):void{
+				this._id_=value;
+			}
+			
+			//======================== initialize =======================
+			
+			public function start():void{
+				//				trace("page size",listDown.pageSize,name);
+				cs.askMore(false, listDown.pageSize+1);
+			}
+			
+			private function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("fontSize","18");
+				totalHeight=listUp.height+listDown.height;
+			}
+			
+			//======================== external activity =======================
+			
+			public function save():void{
+				if(reader==null||selectedItem==null){
+					trace("error: save condition failed",name);
+					return;
+				}
+				
+				selectedItem.data=reader.toBytes();
+				cs.save(selectedItem.data);
+				selectedItem.data.position=0;
+			}
+			
+			//======================== UI activity =======================
+			
+			private function btnDelete_clickHandler(event:MouseEvent):void
+			{				
+				btnHold.label='';
+				cs.delete_();
+				dispatchEvent(new Event("DELETE"));
+			}
+			
+			private function btnRename_clickHandler(event:MouseEvent):void
+			{
+				if(up_down)
+					listUp.selectedItem.edit();
+				else
+					listDown.selectedItem.edit();
+			}
+			
+			private function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				var data:ZintBuffer=null;
+				if(reader!=null){
+					reader.init();
+					data=reader.toBytes();
+				}
+				cs.add(data);
+				dispatchEvent(new Event("ADD"));
+			}
+			
+			private function listDown__RenameHandler(event:HardEvent):void
+			{
+				cs.rename(event.newName);
+			}
+			
+			private function btnHold_clickHandler(event:MouseEvent):void
+			{
+				heldItem=selectedItem;
+				if(heldItem!=null)
+					btnHold.label=selectedItem.name;
+				else
+					btnHold.label='';
+				cs.hold();
+				dispatchEvent(new Event("HOLD"));
+			}
+			
+			private function btnDrop_clickHandler(event:MouseEvent):void
+			{
+				btnHold.label='';
+				heldItem=null;
+				cs.drop();
+				dispatchEvent(new Event("DROP"));
+			}
+			
+			private function lbTitle_clickHandler(event:MouseEvent):void
+			{
+				unselect();
+				cs.unselect();				
+			}
+			
+			private function listDown__JumpHandler(event:HardEvent):void
+			{
+				cs.jump();
+			}
+			
+			private function listUp__JumpHandler(event:HardEvent):void
+			{
+				cs.jump();
+			}
+			
+			private function listUp_SELECTHandler(event:Event):void
+			{
+				up_down=true;
+				listDown.unselect();
+				selectedItem=listUp.selectedItem.node;
+				cs.select(true,listUp.selectedIdx);
+				readData();
+				
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			private function listDown_SELECTHandler(event:Event):void
+			{
+				up_down=false;
+				listUp.unselect();
+				selectedItem=listDown.selectedItem.node;
+				cs.select(false,listDown.selectedIdx);
+				readData();
+				
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			private function listUp_JUMPHandler(event:Event):void
+			{
+				cs.jump();
+			}
+			
+			private function listDown_JUMPHandler(event:Event):void
+			{
+				cs.jump();
+			}
+			
+			private function list_RENAMEHandler(event:HardEvent):void
+			{
+				if(event.newName==null)
+					return;
+				
+				event.newName=event.newName.replace(/ /g,"");
+				if(event.newName.length==0)
+					return;
+				btnHold.label="";
+				
+				cs.rename(event.newName);
+			}
+			
+			private function listDown_ASKMOREHandler(event:Event):void
+			{
+				if(cs!=null)
+					cs.askMore(false, listDown.pageSize+1);
+			}
+			
+			//========================= function =======================
+			public function get selectedPath():Path{
+				var fromUpIdx:int;
+				//				var result:String="";
+				var path:Path=new Path();
+				if(selectedItem==null)
+					return path;
+				
+				if(up_down==false){
+					path.list.push(selectedItem.name);
+					//					result+=selectedItem.name+".";
+					fromUpIdx=up.length-1;
+				}else{
+					fromUpIdx=listUp.selectedIdx;
+				}
+				
+				for(var i:int=fromUpIdx;i>=0;i--){
+					//					result+=up[i].name+".";
+					path.list.push(up[i].name);
+				}
+				return path;
+			}
+			
+			private function readData():void{
+				if(reader==null || selectedItem==null)
+					return;
+				
+				try
+				{
+					reader.fromBytes(selectedItem.data);
+					if(selectedItem.data.bytesAvailable>0)
+						throw new Error();
+				} 
+				catch(error:Error) 
+				{
+					trace("================ data decoding error. reinitialized.",name,"===========");
+					reader.init();
+					save();
+				}
+				selectedItem.data.position=0;
+			}
+			
+			public function unselect():void{
+				selectedItem=null;
+				listUp.unselect();
+				listDown.unselect();
+				if(reader!=null)
+					reader.init();
+				
+				dispatchEvent(new Event("UNSELECT"));
+				//				dispatchEvent(new Event("UNSELECT",true));
+			}
+			
+			public function get selectedIdx():int{
+				return listDown.selectedIdx;
+			}
+			
+			//========================= SC ==========================
+			public function renameSC(newName:String):void{
+				if(selectedItem==null){
+					Toast.show("error: rename cannot find target",true);
+				}
+				
+				selectedItem.name=newName;
+				dispatchEvent(new Event("RENAME"));
+			}
+			
+			public var updatedPath:Path;
+			public function update(up_down:Boolean,idx:int,node:HardItem):void{
+				//				unselect();
+				//				trace("update",name);
+				var fromUpIdx:int;
+				updatedPath=new Path();
+				if(up_down){
+					listUp.update(idx,node);
+					fromUpIdx=idx;
+				}else{
+					listDown.update(idx,node);		
+					fromUpIdx=up.length-1;
+					updatedPath.list.push(node.name);
+				}
+				for(var i:int=fromUpIdx;i>=0;i--){
+					updatedPath.list.push(up[i].name);
+				}
+				reader.fromBytes(node.data);
+				node.data.position=0;
+				
+				dispatchEvent(new Event("UPDATE"));
+			}
+			
+			public function selectSc(up_down:Boolean,idx:int):void{
+				this.up_down=up_down;
+				if(up_down){
+					throw new Error();
+				}else{
+//					trace("unfishied: selectSc",this);
+					listUp.unselect();
+					listDown.selectedIdx=idx;
+					selectedItem=down[idx];
+//					listDown.selectedItem=down[idx];
+//					listDown.select(down[idx]);
+//					listDown.selectByIdx(idx);
+					readData();
+					
+					dispatchEvent(new Event("SELECT"));
+				}
+			}
+			
+			public function deleteSc(up_down:Boolean,idx:int):void{
+				unselect();
+				if(up_down){
+					
+				}else{
+					var target:HardItem=down[idx];
+					down.splice(idx,1);
+					listDown.removeItem(idx);
+				}
+				
+				dispatchEvent(new Event("DATAARRIVE"));
+			}
+			
+			public function appendDownSc(more:Vector.<HardItem>):void
+			{				
+				//				trace("appendDown",name);
+				for each(var m:HardItem in more){
+					down.push(m);
+				}
+				
+				listDown.append(more);
+				
+				dispatchEvent(new Event("DATAARRIVE"));
+			}
+			
+			public function downComplete():void{
+				listDown.noMoreData=true;
+			}
+			
+			public function fillUpSc(up:Vector.<HardItem>):void
+			{
+				//				trace("fillUp",name);
+				unselect();
+				var h:int=listUp.trySize(up.length,totalHeight/2);
+				listUp.clear();
+				listUp.resize(h);
+				listUp.append(up);
+				
+				this.up=up;
+				
+				upEmpty=up.length==0;
+				
+				listDown.resize(totalHeight-h);
+			}
+			
+			public function clearSc(up_down:Boolean):void
+			{
+				unselect();
+				if(up_down){
+					up=new Vector.<HardItem>();
+					listUp.clear();
+					upEmpty=true;
+				}else{
+					down=new Vector.<HardItem>();
+					listDown.clear();
+				}
+			}
+			
+			public function clearAll():void{
+				clearSc(true);
+				clearSc(false);
+				
+				btnHold.label='';
+				heldItem=null;
+			}
+			
+		]]>
+	</fx:Script>	
+	<fx:Metadata>
+		[Event(name="PAGELOADED", type="flash.events.Event")]
+		[Event(name="RENAME", type="flash.events.Event")]
+		[Event(name="DELETE", type="flash.events.Event")]
+		[Event(name="SELECT", type="flash.events.Event")]
+		[Event(name="UNSELECT", type="flash.events.Event")]
+		[Event(name="HOLD", type="flash.events.Event")]
+		[Event(name="DROP", type="flash.events.Event")]
+		[Event(name="DATAARRIVE", type="flash.events.Event")]
+		[Event(name="UPDATE", type="flash.events.Event")]
+		[Event(name="ADD", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup id="vgDrass" width="100%" height="100%" gap="1" rightClick=";">
+		<s:Group width="100%" height="20">
+			<s:Rect width="100%" height="100%">
+				<s:fill><s:SolidColor alpha="0" color="0x0"/></s:fill>
+			</s:Rect>
+			<s:Label id="lbTitle" width="100%" click="lbTitle_clickHandler(event)" fontSize="16"
+					 text="{title}" verticalCenter="0"/>
+		</s:Group>
+		<list:HardList id="listUp" width="100%" JUMP="listUp_JUMPHandler(event)"
+					   RENAME_L="list_RENAMEHandler(event)" SELECT="listUp_SELECTHandler(event)"/>
+		<s:HGroup width="100%" gap="0">
+			<s:Button id="btnAdd" width="100%" click="btnAdd_clickHandler(event)"
+					  enabled="{listDown.selectedItem==null &amp;&amp; listUp.selectedItem==null}"
+					  icon="@Embed('assets/hard/cross.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+			<s:Button id="btnRename" width="100%" click="btnRename_clickHandler(event)"
+					  enabled="{selectedItem!=null}" icon="@Embed('assets/hard/wrench.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+			<s:Button id="btnDelete" width="100%" click="btnDelete_clickHandler(event)"
+					  enabled="{listDown.selectedItem!=null}"
+					  icon="@Embed('assets/hard/trashcan.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+		</s:HGroup>
+		<list:HardList id="listDown" width="100%" height="100%"
+					   ASKMORE="listDown_ASKMOREHandler(event)" JUMP="listDown_JUMPHandler(event)"
+					   RENAME_L="list_RENAMEHandler(event)" SELECT="listDown_SELECTHandler(event)"
+					   showPlus="true"/>
+		<s:HGroup width="100%" gap="0">
+			<s:Button id="btnHold" width="100%" height="100%" click="btnHold_clickHandler(event)"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+			<s:Button id="btnDrop" width="30" click="btnDrop_clickHandler(event)"
+					  enabled="{heldItem!=null}" icon="@Embed('assets/hard/drop.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:BorderContainer>

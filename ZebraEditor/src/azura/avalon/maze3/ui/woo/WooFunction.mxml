@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:file="azura.common.ui.file.*"
+				   width="260" height="156" mouseDown="event.stopImmediatePropagation()"
+				   mouseUp="event.stopImmediatePropagation()">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze3.ui.woo.cargo.WooCargo;
+			import azura.avalon.maze3.ui.woo.cargo.WooZebra;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			import mx.managers.PopUpManager;
+			
+			import org.osflash.signals.Signal;
+			
+			private var _cargo:WooCargo;
+			
+			public var onClose:Signal=new Signal();
+			
+			public function get cargo():WooCargo
+			{
+				return _cargo;
+			}
+
+			[Bindable]
+			public function set cargo(value:WooCargo):void
+			{
+				_cargo = value;
+				radiogroup1.selectedIndex=value.type;
+//				lbMe5=WooZebra(value.branch).zebra.
+			}
+
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZebra.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+//				cargo.branch=new WooZebra();
+				WooZebra(cargo.branch).zebra.fromBytes(data);
+				
+			}
+			
+			protected function btnClose_clickHandler(event:MouseEvent):void
+			{
+				onClose.dispatch();
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:HGroup x="10" y="10">
+		<s:RadioButton label="zebra" groupName="radiogroup1" selected="true"/>
+		<s:RadioButton label="zpano" groupName="radiogroup1"/>
+		<s:RadioButton label="zui" groupName="radiogroup1"/>
+		<s:RadioButton label="cam" groupName="radiogroup1"/>
+	</s:HGroup>
+	<file:FileButton6 id="fbZebra" x="10" y="69" label="load .zebra"
+					  READY="fbZebra_READYHandler(event)"/>
+	<s:Button id="btnClose" x="180" y="125" label="close" click="btnClose_clickHandler(event)"/>
+</s:BorderContainer>

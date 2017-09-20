@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import azura.common.sound.SoundClip;
+			import azura.common.sound.SoundRecorder;
+			import azura.common.swf.ui.InputPanel;
+			import azura.fractale.rtm.RtmTwin;
+			
+			import mx.core.FlexGlobals;
+			import mx.managers.PopUpManager;
+			
+			private var inputPanel:InputPanel;
+			
+			private var twin:RtmTwin;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				stage.addEventListener(SwfEvent.ASK_INPUT,onInputAsk);
+				stage.addEventListener(SwfEvent.RECSTART,onVoiceStart);
+				stage.addEventListener(SwfEvent.RECSTOP,onVoiceStop);
+				
+				twin=new RtmTwin(stage);
+				stage.addEventListener(RtmEvent.CS_CONNECT,twin.receiveEvent);
+				stage.addEventListener(RtmEvent.CS_CLOSE_CHANNEL,twin.receiveEvent);
+				stage.addEventListener(RtmEvent.CS_CLOSE_CHAT,twin.receiveEvent);
+				stage.addEventListener(RtmEvent.CS_LISTEN_RTMFP,twin.receiveEvent);
+				stage.addEventListener(RtmEvent.UI_ASK_MIC,twin.receiveEvent);
+				stage.addEventListener(RtmEvent.UI_GIVEUP_MIC,twin.receiveEvent);
+			}
+			
+			private function onInputAsk(ie:SwfEvent):void{
+				if(inputPanel!=null)
+					return;
+				
+				inputPanel=new InputPanel();
+				inputPanel.addEventListener(SwfEvent.ANSWER_INPUT,onInputAnswer);
+				
+				PopUpManager.addPopUp(inputPanel,FlexGlobals.topLevelApplication as DisplayObject,true);
+				inputPanel.width=stage.stageWidth/2;
+				PopUpManager.centerPopUp(inputPanel);
+			}
+			
+			private function onInputAnswer(e:SwfEvent):void{
+				PopUpManager.removePopUp(inputPanel);
+				inputPanel=null;
+				stage.dispatchEvent(e);
+			}
+			
+			private function onVoiceStart(ve:SwfEvent):void{
+				SoundRecorder.start();
+			}
+			
+			private function onVoiceStop(ve:SwfEvent):void{
+				var sc:SoundClip=SoundRecorder.stop();
+				var se:SwfEvent=new SwfEvent(SwfEvent.RECRAW);
+				if(sc!=null){
+					se.milliseconds=sc.milliseconds;
+					se.data=sc.data;
+				}
+				stage.dispatchEvent(se);
+			}
+			
+			public function onMp3Recorded(mp3:ByteArray,ms:int):void{
+				var ve:SwfEvent=new SwfEvent(SwfEvent.RECDONE);
+				ve.data=mp3;
+				ve.milliseconds=ms;
+				stage.dispatchEvent(ve);
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="RECRAW", type="azura.common.swf.SwfEvent")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:Group>

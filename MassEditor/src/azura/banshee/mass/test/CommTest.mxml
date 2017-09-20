@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)" fontSize="18">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.Statics;
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.mass.model.MassTree;
+			import azura.banshee.mass.model.v3.MassTree3;
+			import azura.banshee.mass.sdk.MassCoderA4;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.Gal4Pack;
+			
+			public var canvas:CommTestCanvas=new CommTestCanvas();
+						
+			// ======================= init ====================
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Statics.stage=stage;
+				StarlingAway.init(stage,holder,loadStage3D);
+			}
+			
+			private function loadStage3D():void{
+				StarlingAway.addStarlingLayer(ready);
+			}			
+			
+			private function ready(sl:StarlingLayer):void{
+				canvas.init(stage,sl.root);
+			}
+			
+			// ===================== load ===================
+			protected function fbLeft_READYHandler(event:Event):void
+			{
+				fbLeft.visible=false;
+				
+				var master:String=new Gal4Pack().loadFrom(fbLeft.file);
+				var dump:ZintBuffer=Gal4.readSync(master);
+				
+//				var tree:MassTree=new MassTree();
+//				tree.fromBytes(dump);
+				
+				canvas.showTreeLeft(dump,new MassCoderA4());
+			}
+			
+			protected function fbRight_READYHandler(event:Event):void
+			{
+				fbRight.visible=false;
+				
+				var master:String=new Gal4Pack().loadFrom(fbRight.file);
+				var dump:ZintBuffer=Gal4.readSync(master);
+				
+//				var tree:MassTree3=new MassTree3();
+//				tree.fromBytes(dump);
+				
+				canvas.showTreeRight(dump,new MassCoderA4());
+			}
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder" horizontalCenter="0" verticalCenter="0"/>
+	<file:FileButton6 id="fbLeft" left="{this.width/4}" label="left" _ext="*.mass"
+					  READY="fbLeft_READYHandler(event)" verticalCenter="0"/>
+	<file:FileButton6 id="fbRight" right="{this.width/4}" label="right" _ext="*.mass"
+					  READY="fbRight_READYHandler(event)" verticalCenter="0"/>
+</s:Group>

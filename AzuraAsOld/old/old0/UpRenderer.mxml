@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- http://blog.flexexamples.com/2010/02/25/preventing-the-selected-item-highlighting-in-the-spark-list-control-in-flex-4/ -->
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				rightClick="itemrenderer1_rightClickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.Node;
+			
+			import mx.core.IUIComponent;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			
+			[Bindable]
+			private var item:Node;
+			
+			override public function set data(value:Object):void{
+				item=value as Node;
+			}
+			
+			override public function get data():Object{
+				return item;
+			}
+			
+			protected function itemrenderer1_rightClickHandler(event:MouseEvent):void
+			{
+				trace('right click on up');
+			}
+			
+		]]>
+	</fx:Script>	
+	<s:Label left="5" right="3" top="7" bottom="5" maxDisplayedLines="1" showTruncationTip="true"
+			 text="{item.name}"/>	
+</s:ItemRenderer>

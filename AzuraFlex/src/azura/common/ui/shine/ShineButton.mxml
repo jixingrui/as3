@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Image xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="image1_creationCompleteHandler(event)"
+		 mouseDown="image1_mouseDownHandler(event)" mouseOut="image1_mouseOutHandler(event)"
+		 mouseOver="image1_mouseOverHandler(event)" mouseUp="image1_mouseUpHandler(event)"
+		 smooth="true">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.algorithm.FastMath;
+			
+			import mx.events.FlexEvent;
+			
+			public static var syncLoader:ShineButtonLoaderI;
+			
+			private var _urlNormal:String;
+			private var _urlShine:String;
+			
+			public var group:ShineButtonGroup;
+			
+			public var idle_hover_click_toggle:int=2;
+			
+			public var clickToSolid:Boolean;
+			
+			private var isShinning:Boolean=false;
+			private var isSelected:Boolean=false;
+			
+			public var bd:BitmapData;
+			
+			private var downPos:Point;
+			
+			
+			public function get urlNormal():String{
+				return _urlNormal;
+			}
+			
+			public function set urlNormal(value:String):void
+			{
+				if(value==null)
+					return;
+				
+				_urlNormal = value;
+				if(!isShinning){
+					loadSource(_urlNormal);
+				}
+			}
+			
+			public function get urlShine():String{
+				return _urlShine;
+			}
+			
+			public function set urlShine(value:String):void
+			{
+				if(value==null)
+					return;
+				
+				_urlShine = value;
+				if(isShinning){
+					loadSource(_urlShine);
+				}
+			}
+			
+			private function loadSource(url:String):void{				
+				var bdOld:BitmapData=bd;
+				this.bd=syncLoader.loadBitmapData(url);
+				this.source=bd;
+				if(bdOld!=null){
+					this.x=this.x+bdOld.width/2-bd.width/2;
+					this.y=this.y+bdOld.height/2-bd.height/2;
+				}
+				dispatchEvent(new Event("SKINCHANGE"));
+			}
+			
+			private function image1_mouseOverHandler(event:MouseEvent):void
+			{
+//								trace("mouse over",name);
+				if(idle_hover_click_toggle==1){
+					shine();
+					//					if(group!=null)
+					select();
+				}else if(idle_hover_click_toggle==2){
+					shine();
+				}
+			}
+			
+			private function image1_mouseDownHandler(event:MouseEvent):void{
+				downPos=new Point();
+				downPos.x=event.stageX;
+				downPos.y=event.stageY;
+				if(idle_hover_click_toggle==3){
+					if(isSelected==false){
+						shine();
+						select();
+					}else{
+						normal();
+						unselect();
+					}
+				}else if(idle_hover_click_toggle==2){
+					shine();
+				}
+			}
+			
+			private function image1_mouseOutHandler(event:MouseEvent):void
+			{
+//								trace("mouse out",name);
+				downPos=null;
+				if(group!=null)
+					return;
+				else if(idle_hover_click_toggle==1){
+					normal();
+				}else if(idle_hover_click_toggle==2){
+					normal();
+				}
+				
+			}
+			
+			private function image1_mouseUpHandler(event:MouseEvent):void
+			{
+				var dist:Number;
+				if(group!=null){
+					if(idle_hover_click_toggle==1){
+						downPos=null;
+						return;
+					}else if(idle_hover_click_toggle==2){
+						if(downPos!=null){
+							dist=FastMath.dist(event.stageX,event.stageY,downPos.x,downPos.y);
+							if(dist<64){
+								isSelected=false;
+								select();
+							}
+						}
+						downPos=null;
+						return;
+					}
+				} else {
+					if(idle_hover_click_toggle==1){
+						downPos=null;
+						normal();
+					}else if(idle_hover_click_toggle==2){
+						//					select();
+						if(downPos!=null){
+							dist=FastMath.dist(event.stageX,event.stageY,downPos.x,downPos.y);
+							if(dist<64){
+								select();
+								isSelected=false;
+							}
+						}
+						downPos=null;
+						normal();
+					}
+					
+				}
+			}
+			
+			public function shine():void{
+				if(isShinning)
+					return;
+				
+				isShinning=true;
+				
+				if(group!=null)
+					group.focus=this;
+				
+				if(_urlShine==null)
+					return;
+				
+				loadSource(_urlShine);
+				dispatchEvent(new Event("SHINE"));
+			}
+			
+			public function normal():void{
+				if(!isShinning)
+					return;
+				
+				isShinning=false;			
+				
+				loadSource(_urlNormal);
+				dispatchEvent(new Event("UNSHINE"));
+			}
+			
+			private function select():void{
+				if(isSelected)
+					return;
+				
+				isSelected=true;
+				//				trace("select",name);
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			public function unselect():void{
+				if(isSelected==false)
+					return;
+				
+				isSelected=false;
+				dispatchEvent(new Event("UNSELECT"));
+			}
+			
+			protected function image1_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(bd!=null)
+					dispatchEvent(new Event("SKINCHANGE"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SELECT", type="flash.events.Event")]
+		[Event(name="UNSELECT", type="flash.events.Event")]
+		[Event(name="SHINE", type="flash.events.Event")]
+		[Event(name="UNSHINE", type="flash.events.Event")]
+		[Event(name="SKINCHANGE", type="flash.events.Event")]
+	</fx:Metadata>
+</s:Image>

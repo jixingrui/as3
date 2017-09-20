@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Image xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark" smooth="true" smoothingQuality="high" scaleMode="letterbox"
+		 mouseDown="image1_mouseDownHandler(event)" mouseOut="image1_mouseOutHandler(event)"
+		 mouseUp="image1_mouseUpHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.graphics.ClickEvent;
+			import azura.common.util.OS;
+			
+			import mx.events.EffectEvent;
+			
+			import org.osflash.signals.Signal;
+			
+			private var coolDown:Timer;			
+//			[Bindable]
+//			public var maxDuration:int=30000;
+			
+			private var _onHold:Signal=new Signal();
+			private var _onRelease:Signal=new Signal();
+			
+//			[Bindable]
+			private var playing:Boolean;
+			
+			[Bindable]
+			public var external:Object;
+						
+			public function get onRelease():Signal
+			{
+				return _onRelease;
+			}
+
+			public function get onHold():Signal
+			{
+				return _onHold;
+			}
+
+			protected function image1_mouseDownHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				if(playing||coolDown!=null)
+					return;
+				
+				fade.stop();
+				play();
+				_onHold.dispatch();
+			}
+						
+			protected function image1_mouseUpHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				release();
+			}
+			
+			public function play():void{
+				playing=true;
+				var arr:Array=new Array();
+				arr.push(this);
+				if(external!=null)
+					arr.push(external);
+				fade.play(arr);
+			}
+			
+			public function release():void{
+				if(!playing||coolDown!=null)
+					return;
+				
+				playing=false;
+				onRelease.dispatch();
+				
+				coolDown=new Timer(2000,1);
+				coolDown.start();
+				coolDown.addEventListener(TimerEvent.TIMER_COMPLETE,onReady);
+				function onReady(te:TimerEvent):void{
+					coolDown.removeEventListener(TimerEvent.TIMER_COMPLETE,onReady);
+					coolDown=null;
+				}
+			}
+			
+			protected function fade_effectEndHandler(event:EffectEvent):void
+			{
+				if(playing)
+					play();
+			}
+			
+			protected function image1_mouseOutHandler(event:MouseEvent):void
+			{
+				release();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Sequence id="fade" duration="500" effectEnd="fade_effectEndHandler(event)">
+			<s:Fade alphaFrom="1.0" alphaTo="0.3"/>
+			<s:Fade alphaFrom="0.3" alphaTo="1.0"/>
+		</s:Sequence>   
+	</fx:Declarations>
+</s:Image>

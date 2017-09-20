@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 implements="azura.common.ui.grid.GridI">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.grid.GridMotor;
+			import azura.common.ui.grid.ItemI;
+			import azura.touch.watcherOld.WatcherDrag;
+			import azura.touch.watcherOld.WatcherEvent;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import org.osflash.signals.Signal;
+			
+			public var gridMotor:GridMotor;
+			
+			private var drag:WatcherDrag;
+			
+			public var itemWidth:int;
+			public var itemHeight:int;
+			
+			public var onSelect:Signal=new Signal(int);
+			public var onUnselect:Signal=new Signal(int);
+			
+			public var down_right:Boolean;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				drag=new WatcherDrag(this,false);
+				drag.addEventListener(WatcherEvent.DRAG_START,dragStart);
+				drag.addEventListener(WatcherEvent.DRAG_MOVE,dragMove);
+				drag.addEventListener(WatcherEvent.DRAG_END,dragEnd);
+				
+				gridMotor=new GridMotor(this,width,height,itemWidth,itemHeight,down_right);
+			}
+			
+			public function reset():void{
+//				gridMotor.clear();
+				holder.removeAllElements();
+				gridMotor.clear();
+				gridMotor.resize(width,height,itemWidth,itemHeight);
+//				gridMotor=new GridMotor(this,width,height,itemWidth,itemHeight,down_right);
+			}
+			
+			private function dragStart(event:WatcherEvent):void{
+				gridMotor.dragStart();
+			}
+			
+			private function dragMove(event:WatcherEvent):void{
+				gridMotor.dragMove(event.delta.x,event.delta.y);
+			}
+			
+			private function dragEnd(event:WatcherEvent):void{
+				gridMotor.dragEnd();
+			}
+			
+			public function addItem(item:ItemV):void{
+				holder.addElement(item);
+				gridMotor.addItem(item);
+				item.onSelect.add(onSelectV);
+				item.onUnselect.add(onUnselectV);
+			}	
+			
+			public function onSelectV(item:ItemV):void{
+				var idx:int=gridMotor.indexOf(item);
+				onSelect.dispatch(idx);
+			}
+			
+			public function onUnselectV(item:ItemV):void{
+				var idx:int=gridMotor.indexOf(item);
+				onUnselect.dispatch(idx);
+			}
+			
+			public function gridMoveItem(item:ItemI,x:Number,y:Number):void{
+				var iv:IVisualElement=item as IVisualElement;
+				holder.addElement(iv);
+				iv.x=x;
+				iv.y=y;
+			}	
+			
+			public function gridMoveShell(x:Number, y:Number):void
+			{
+				if(down_right){
+					holder.x=x+width/2;
+					holder.y=y;					
+				}else{
+					holder.x=x;
+					holder.y=y+height/2;
+				}
+			}
+			
+			public function gridPageSize(value:int):void{
+			}
+			
+			public function gridPageCount(total:int):void{
+			}
+			
+			public function gridAtPage(idx:int):void{
+			}
+			
+			public function showHead(value:Boolean):void{
+			}
+			
+			public function showTail(value:Boolean):void{
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group id="holder"/>
+</s:Group>

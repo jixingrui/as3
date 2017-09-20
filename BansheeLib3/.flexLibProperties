@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="azura.banshee.zbox2.zebra.zmatrix.ZmatrixC3"/>
+    <classEntry path="azura.banshee.mass.model.MassAction"/>
+    <classEntry path="azura.banshee.mass.model.MassBox"/>
+    <classEntry path="azura.banshee.mass.model.ScreenSetting"/>
+    <classEntry path="azura.banshee.mass.model.MassTreeN"/>
+    <classEntry path="azura.banshee.mass.model.MassTree"/>
+    <classEntry path="azura.banshee.mass.trigger.TouchHover"/>
+    <classEntry path="azura.banshee.mass.trigger.TouchSingle"/>
+    <classEntry path="azura.banshee.mass.trigger.TouchOut"/>
+    <classEntry path="azura.banshee.mass.trigger.TouchDouble"/>
+    <classEntry path="azura.banshee.mass.view.p.old.DragGrid"/>
+    <classEntry path="azura.banshee.zbox3.LoadingTree"/>
+    <classEntry path="azura.banshee.zbox3.LoadingTreeLoaderI"/>
+    <classEntry path="azura.banshee.zbox3.SwapTree3"/>
+    <classEntry path="azura.banshee.zbox3.SortingTree"/>
+    <classEntry path="azura.banshee.zbox3.collection.ZboxBitmap3"/>
+    <classEntry path="azura.banshee.zbox3.engine.Zbox3ReplicaStarling"/>
+    <classEntry path="azura.banshee.zbox3.engine.FrameCarrier"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmatrix.ZhlineC3M"/>
+    <classEntry path="azura.banshee.zbox3.Zbox3Touch"/>
+    <classEntry path="azura.banshee.zbox3.Zbox3Scale"/>
+    <classEntry path="azura.banshee.zbox3.ZcameraI"/>
+    <classEntry path="azura.banshee.mass.view.p.MassActiveI"/>
+    <classEntry path="azura.banshee.zbox3.LoadingTreeLoaderListenerI"/>
+    <classEntry path="azura.banshee.zbox3.collection.Zbox3ScreenCapture"/>
+    <classEntry path="azura.banshee.zbox3.NakedTree"/>
+    <classEntry path="azura.banshee.mass.view.p.grid.MassTreeNVP_ListItem3"/>
+    <classEntry path="azura.banshee.mass.view.p.grid.MassTreeNVP_List3"/>
+    <classEntry path="azura.banshee.mass.view.p.old.ListMotorOld"/>
+    <classEntry path="azura.banshee.mass.view.MassTreeSyncI"/>
+    <classEntry path="azura.banshee.mass.view.MassTreeViewerI"/>
+    <classEntry path="azura.banshee.mass.view.e.DragGreenBox2"/>
+    <classEntry path="azura.banshee.mass.view.e.MassTreeNVE2"/>
+    <classEntry path="azura.banshee.mass.view.e.MassTreeVE2"/>
+    <classEntry path="azura.banshee.mass.model.v3.ActorI"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTreeNV3E"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTreeN3E"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTree3E"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTreeN3P"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTreeNV3P"/>
+    <classEntry path="azura.banshee.mass.model.v3.MassTree3P"/>
+    <classEntry path="azura.banshee.mass.sdk.MassCoder"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmask.ZmaskTile2"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmask.Zmask2"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmask.ZshardC3"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmask.ZmaskC3"/>
+    <classEntry path="azura.banshee.zbox3.zebra.zmask.ZmaskTile2Op"/>
+    <classEntry path="azura.banshee.zbox3.zebra.LoopControlI"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

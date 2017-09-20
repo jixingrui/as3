@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SpriteVisualElement xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   addedToStage="spritevisualelement1_addedToStageHandler(event)"
+					   click="spritevisualelement1_clickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.deadreckoned.assetmanager.AssetManager;
+			
+			import mx.collections.XMLListCollection;
+			private var _idx:int=-1;
+			private var bm:Bitmap;
+			private var source:XMLListCollection;
+			public var data:String;
+			
+			private var name_idx:Dictionary=new Dictionary();
+			
+			public function get idx():int
+			{
+				return _idx;
+			}
+			
+			protected function spritevisualelement1_addedToStageHandler(event:Event):void
+			{
+				bm=new Bitmap();
+				addChild(bm);
+			}
+			
+			protected function spritevisualelement1_clickHandler(event:MouseEvent):void
+			{
+				var pos:int=bm.bitmapData.height/2+event.localY;
+				var grid:int=bm.bitmapData.height/source.length;
+				var idx:int=source.length-pos/grid;
+				
+				if(_idx!=idx)
+					toIdx(idx);
+			}
+			
+			public function set xml(value:XMLList):void{
+				source=new XMLListCollection(value);
+				for(var i:int=0;i<source.length;i++){
+					var s:String=source[i].name;
+					name_idx[s]=i;
+				}
+				_idx=-1;
+				roll(true);
+			}
+			
+			public function to(name:String):void{
+				var idx:int=name_idx[name];
+				toIdx(idx);
+			}
+			
+			private function roll(forward:Boolean):void{
+				if(source==null)
+					return;
+				
+				if(forward){
+					_idx++;
+					if(idx>=source.length){
+						_idx--;
+						return;
+					}
+				}else{
+					_idx--;
+					if(idx<0){
+						_idx++;
+						return;
+					}
+				}
+				
+				toIdx(idx);
+			}
+			
+			private function toIdx(idx:int):void{
+				
+				if(idx<0||idx>=source.length)
+					idx=0;
+				
+				_idx=idx;
+				
+				var url:String=source[idx].image;
+				bm.bitmapData=AssetManager.getInstance().get(url).asset;
+				data=source[idx].name;
+				dispatchEvent(new Event(Event.CHANGE));
+				
+				bm.x=-bm.bitmapData.width/2;
+				bm.y=-bm.bitmapData.height/2;
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+</s:SpriteVisualElement>

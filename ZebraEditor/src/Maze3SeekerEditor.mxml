@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:seeker="azura.avalon.maze3.ui.seeker.*"
+					   width="1200" height="700" backgroundAlpha="0" creationPolicy="all"
+					   showStatusBar="false">
+	<seeker:Maze3SeekerEdit/>
+</s:WindowedApplication>

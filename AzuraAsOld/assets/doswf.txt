@@ -1,0 +1,4 @@
+ShoujiguangFlex -> sjg_core : no "a"
+SjgAnd -> SwfShell.loaderVersionLocal, app.xml.versonNumber : only "azura" no #random string#
+SjgWin -> SwfShell.loaderVersionLocal, app.xml.versonNumber : only "azura" no #random string#
+Mp3Worker : only "azura"

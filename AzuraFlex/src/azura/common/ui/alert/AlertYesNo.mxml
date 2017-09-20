@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="panel2_creationCompleteHandler(event)" fontSize="28"
+		 mouseDown="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		 title="{header}">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			protected var header:String;
+			[Bindable]
+			protected var text:String;
+			
+			private var yes_no:Function;
+			
+			private static var current:AlertYesNo;
+			
+			public static function show(yes_no:Function,text:String,header:String=''):void{
+				
+				if(current!=null)
+					return;
+				
+				current=new AlertYesNo();
+				current.text=text;
+				current.header=header;
+				current.yes_no=yes_no;
+				
+				var parent:DisplayObject=FlexGlobals.topLevelApplication as DisplayObject;
+				PopUpManager.addPopUp(current, parent, true);
+				PopUpManager.centerPopUp(current);
+			}
+			
+			protected function btnYes_clickHandler(event:MouseEvent):void
+			{
+				yes_no.call(null,true);
+				PopUpManager.removePopUp(this);	
+				current=null;
+				yes_no=null;
+			}
+			
+			protected function btnNo_clickHandler(event:MouseEvent):void
+			{
+				yes_no.call(null,false);
+				PopUpManager.removePopUp(this);	
+				current=null;
+				yes_no=null;
+			}
+			
+			protected function panel2_creationCompleteHandler(event:FlexEvent):void
+			{
+				width+=label.measuredWidth/4;
+				width=Math.max(width,stage.stageWidth/3);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup top="20" bottom="20" width="100%" height="100%" gap="20" horizontalAlign="justify"
+			  horizontalCenter="0">
+		<s:Label id="label" horizontalCenter="0" text="{text}" textAlign="center"
+				 verticalAlign="middle" verticalCenter="0"/>
+		<s:HGroup id="gpButton" bottom="20" width="80%" height="60%" fontSize="36" gap="20"
+				  horizontalAlign="center" horizontalCenter="0">
+			<s:Button id="btnYes" width="40%" label="是"
+					  mouseDown="btnYes_clickHandler(event)" skinClass="azura.common.ui.alert.ButtonSkin"/>
+			<s:Button id="btnNo" width="40%" label="否"
+					  mouseDown="btnNo_clickHandler(event)" skinClass="azura.common.ui.alert.ButtonSkin"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Panel>

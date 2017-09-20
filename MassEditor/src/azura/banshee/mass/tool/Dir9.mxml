@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  gap="0">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			
+			private var _select9:int=5;
+			public function get select9():int
+			{
+				return _select9;
+			}
+
+			public function set select9(value:int):void
+			{
+				_select9 = value;
+				dirGroup.getRadioButtonAt(value-1).selected=true;
+			}
+
+			protected function dirGroup_itemClickHandler(event:ItemClickEvent):void
+			{
+				_select9=event.index+1;
+				dispatchEvent(new Event("change"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="dirGroup" itemClick="dirGroup_itemClickHandler(event)"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:HGroup gap="0">
+		<s:RadioButton groupName="dirGroup" id="rb1"/>
+		<s:RadioButton groupName="dirGroup" id="rb2" />
+		<s:RadioButton groupName="dirGroup" id="rb3"/>
+	</s:HGroup>
+	<s:HGroup gap="0">
+		<s:RadioButton groupName="dirGroup" id="rb4"/>
+		<s:RadioButton groupName="dirGroup" selected="true" id="rb5"/>
+		<s:RadioButton groupName="dirGroup" id="rb6"/>
+	</s:HGroup>
+	<s:HGroup gap="0">
+		<s:RadioButton groupName="dirGroup" id="rb7"/>
+		<s:RadioButton groupName="dirGroup" id="rb8"/>
+		<s:RadioButton groupName="dirGroup" id="rb9"/>
+	</s:HGroup>	
+</s:VGroup>

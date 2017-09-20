@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   width="1366" height="768"
+					   addedToStage="windowedapplication1_addedToStageHandler(event)"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)"
+					   frameRate="60" showStatusBar="false">
+	<fx:Script>
+		<![CDATA[
+			import azura.zui.TouchView;
+			import azura.zui.Zui;
+			import azura.zui.touch.TouchBox;
+			import azura.zui.touch.TouchLayer;
+			import azura.zui.touch.TouchZ;
+			
+			import mx.events.FlexEvent;
+			
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				new Zui();
+			}
+			
+			protected function windowedapplication1_addedToStageHandler(event:Event):void
+			{
+				TouchZ.start(stage);
+				
+				var layer:TouchLayer=new TouchLayer();
+				TouchZ.addLayer(layer);
+				var box:TouchBox=new TouchBox();
+				box.width=400;
+				box.height=400;				
+				layer.putBox(box);
+				
+				
+				var user:TouchUser=new TouchUser();
+				var view:TouchView=new TouchView(400,400);
+				holder.addChild(view);
+				user.view=view;
+				
+				
+				box.user=user;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder" horizontalCenter="0" verticalCenter="0"/>
+</s:WindowedApplication>

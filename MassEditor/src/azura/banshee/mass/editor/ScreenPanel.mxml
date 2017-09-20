@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" width="160"
+		  xmlns:ui="azura.common.ui.*" verticalAlign="middle" horizontalAlign="center"
+		  gap="1" xmlns:label="azura.common.ui.label.*">
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable]
+			public var w:int=0;
+			[Bindable]
+			public var h:int=0;
+			
+			protected function lnW_changeHandler(event:Event):void
+			{
+				w=lnW.number;				
+				dispatchEvent(new Event("change"));
+			}
+			
+			protected function lnH_changeHandler(event:Event):void
+			{
+				h=lnH.number;				
+				dispatchEvent(new Event("change"));				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<label:LabelNumber2 id="lnW" label="w" number="{w}" change="lnW_changeHandler(event)"/>
+	<label:LabelNumber2 id="lnH" label="h" number="{h}" change="lnH_changeHandler(event)"/>
+</s:HGroup>

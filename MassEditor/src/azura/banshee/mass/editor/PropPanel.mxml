@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  width="100%" height="100%" gap="2" horizontalAlign="center">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.mass.model.MassBox;
+			import azura.common.collections.bitset.BitSet;
+			
+			private var _bs:BitSet;
+			
+			public function get bs():BitSet
+			{
+				return _bs;
+			}
+			
+			public function set bs(value:BitSet):void
+			{
+				if(value==null)
+					throw new Error();
+				_bs = value;
+				refresh();
+			}
+			
+			private function refresh():void{
+				cbState.selected=bs.getBitAt(MassBox.STATE);
+				cbHlist.selected=bs.getBitAt(MassBox.HLIST);
+				cbVlist.selected=bs.getBitAt(MassBox.VLIST);
+				cbDrag.selected=bs.getBitAt(MassBox.DRAG);
+				cbZoom.selected=bs.getBitAt(MassBox.ZOOM);
+				cbFill_2.selected=bs.getBitAt(MassBox.FILL_2);
+				cbFill_1.selected=bs.getBitAt(MassBox.FILL_1);
+				cbInterept.selected=bs.getBitAt(MassBox.INTERCEPT);
+				cbReceiver.selected=bs.getBitAt(MassBox.RECEIVER);
+				cbKeep.selected=bs.getBitAt(MassBox.KEEP);
+			}
+			
+			private function change():void{
+				if(cbHlist.selected){
+					cbVlist.selected=false;
+					cbDrag.selected=false;
+					cbZoom.selected=false;
+				}
+				if(cbVlist.selected){
+					cbHlist.selected=false;
+					cbDrag.selected=false;
+					cbZoom.selected=false;
+				}
+				bs.setBitAt(MassBox.STATE,cbState.selected);
+				bs.setBitAt(MassBox.HLIST,cbHlist.selected);
+				bs.setBitAt(MassBox.VLIST,cbVlist.selected);
+				bs.setBitAt(MassBox.DRAG,cbDrag.selected);
+				bs.setBitAt(MassBox.ZOOM,cbZoom.selected);
+				bs.setBitAt(MassBox.FILL_2,cbFill_2.selected);
+				bs.setBitAt(MassBox.FILL_1,cbFill_1.selected);
+				bs.setBitAt(MassBox.INTERCEPT,cbInterept.selected);
+				bs.setBitAt(MassBox.RECEIVER,cbReceiver.selected);
+				bs.setBitAt(MassBox.KEEP,cbKeep.selected);
+				
+				dispatchEvent(new Event("change"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:HGroup gap="2">
+		<s:CheckBox id="cbState" label="S" change="change()"/>
+		<s:CheckBox id="cbKeep" visible="false" label="K" change="change()"/>
+		<s:CheckBox id="cbInterept" label="I" change="change()"/>
+	</s:HGroup>
+	<s:HGroup gap="2">
+		<s:CheckBox id="cbFill_1" label="F1" change="change()" enabled="{!cbFill_2.selected}"/>
+		<s:CheckBox id="cbFill_2" label="F2" change="change()" enabled="{!cbFill_1.selected}"/>
+	</s:HGroup>
+	<s:HGroup gap="2">
+		<s:CheckBox id="cbHlist" label="H" change="change()" enabled="{!cbVlist.selected}"/>
+		<s:CheckBox id="cbVlist" label="V" change="change()" enabled="{!cbHlist.selected}"/>
+		<s:CheckBox id="cbReceiver" label="R" change="change()"/>
+	</s:HGroup>
+	<s:HGroup visible="false" gap="2">
+		<s:CheckBox id="cbDrag" label="D" change="change()"
+					enabled="{!cbHlist.selected &amp;&amp; !cbVlist.selected}"/>
+		<s:CheckBox id="cbZoom" label="Z" change="change()"
+					enabled="{!cbHlist.selected &amp;&amp; !cbVlist.selected}"/>
+	</s:HGroup>
+</s:VGroup>

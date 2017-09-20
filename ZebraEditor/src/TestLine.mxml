@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:file="azura.common.ui.file.*"
+					   addedToStage="windowedapplication1_addedToStageHandler(event)"
+					   backgroundAlpha="0" backgroundColor="0" creationPolicy="all" frameRate="60"
+					   implements="azura.common.algorithm.mover.TimerI"
+					   preinitialize="windowedapplication1_preinitializeHandler(event)"
+					   showStatusBar="false">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.zbox3.Zbox3;
+			import azura.banshee.zbox3.Zspace3;
+			import azura.banshee.zbox3.collection.ZboxBitmap3;
+			import azura.banshee.zbox3.collection.ZboxRect3;
+			import azura.banshee.zbox3.engine.Zbox3ReplicaStarling;
+			import azura.banshee.zbox3.zebra.ZebraC3;
+			import azura.common.algorithm.mover.TimerFps;
+			import azura.common.graphics.Draw;
+			import azura.gallerid4.GalPack4;
+			
+			import mx.events.FlexEvent;
+			
+			private var sl:StarlingLayer;
+			
+			private var land:Zspace3;
+			private var actor:ZebraC3;
+			private var actorNext:ZebraC3;
+			
+			private var hud:Zspace3;
+			private var scope:ZboxRect3;
+			private var cross:ZboxBitmap3;
+			
+			protected function windowedapplication1_addedToStageHandler(event:Event):void
+			{
+				StarlingAway.init(stage,holder,onInit);
+			}
+			private function onInit():void{
+				StarlingAway.addStarlingLayer(starlingReady);
+			}				
+			private function starlingReady(sl:StarlingLayer):void{
+				this.sl=sl;
+				
+				//land
+				var rep:Zbox3ReplicaStarling=new Zbox3ReplicaStarling(sl.root);
+				land=new Zspace3(rep);
+				land.look(0,0,stage.stageWidth/2,stage.stageHeight/2);
+				land.onReplaceParent.add(replaceZebra);
+				actor=new ZebraC3(land);
+				
+				//hud
+				var repHud:Zbox3ReplicaStarling=new Zbox3ReplicaStarling(sl.root);
+				hud=new Zspace3(repHud);
+				hud.look(0,0,stage.stageWidth,stage.stageHeight);
+				scope=new ZboxRect3(hud);
+				scope.paint(0xffff0000);
+				scope.resize(hud.widthView/2,hud.heightView/2);
+				var crossBd:BitmapData=Draw.cross(11,11);
+				cross=new ZboxBitmap3(hud);
+				cross.fromBitmapData(crossBd);
+				
+				hud.addGesture(new LineDragger(land,scope));
+			}
+			
+			private var hasContent:Boolean=false;
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				//				fbZebra.visible=false;
+				
+				var master:String=new GalPack4().loadFrom(fbZebra.file);
+				
+				if(!hasContent){
+					hasContent=true;
+					actor.feedMc5(master);
+				}else{
+					actorNext=new ZebraC3(land);
+					actor.zbox.replaceBy(actorNext.zbox);
+					actorNext.feedMc5(master);
+				}
+				
+				
+				//				var bd:BitmapData=Draw.cross(11,11,1,0xffff0000);
+				//				var z:Zebra2=new Zebra2().fromBitmapData(bd);
+				//				actor.feedZebra(z);
+				
+				TimerFps.setTimer(5,this);
+			}
+			
+			public function replaceZebra(newGuy:Zbox3):void{
+				trace("actor should be dispose. is it?",actor.zbox.isDisposed,this);
+				actor=actorNext;
+			}
+			
+			public function tick():void{
+				actor.zbox.angle+=10;
+			}
+			
+			protected function windowedapplication1_preinitializeHandler(event:FlexEvent):void
+			{
+				nativeWindow.width=Capabilities.screenResolutionX*0.8;
+				nativeWindow.height=Capabilities.screenResolutionY*0.8;
+				nativeWindow.x=0;
+				nativeWindow.y=Capabilities.screenResolutionY*0.05;
+			}
+			
+			protected function btnMinus_clickHandler(event:MouseEvent):void
+			{
+				land.scaleView*=0.7;
+				//				refreshScope();
+			}
+			
+			protected function btnPlus_clickHandler(event:MouseEvent):void
+			{
+				land.scaleView*=1.428;
+				//				refreshScope();
+			}
+			
+			//			private function refreshScope():void{
+			//				scope.shape(land.widthView/land.scaleView,land.heightView/land.scaleView);
+			//				var crossBd:BitmapData=Draw.cross(11/space.scale,11/space.scale,Math.ceil(1/space.scale));
+			//				cross.fromBitmapData(crossBd,true);
+			//			}
+			
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup bottom="0" horizontalCenter="0">
+		<s:Button id="btnMinus" label="-" click="btnMinus_clickHandler(event)"/>
+		<file:FileButton6 id="fbZebra" label="load *.zebra" _ext="*.zebra"
+						  READY="fbZebra_READYHandler(event)"/>
+		<s:Button id="btnPlus" label="+" click="btnPlus_clickHandler(event)"/>
+	</s:HGroup>
+</s:WindowedApplication>

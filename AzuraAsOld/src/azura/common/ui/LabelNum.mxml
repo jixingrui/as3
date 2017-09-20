@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  currentState="Show">
+	<fx:Script>
+		<![CDATA[			
+			import mx.events.FlexEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			public var min:Number=NaN;
+			public var max:Number=NaN;
+			
+			[Bindable]
+			public var label:String="LabelNum";
+			
+			[Bindable]
+			public var num:Number=0;
+			
+			protected function tiValue_enterHandler(event:FlexEvent):void
+			{
+				var input:Number=parseFloat(tiNum.text);
+				if(!isNaN(input) && !(input<min) && !(input>max)){
+					num=input;
+				}
+				currentState="Show";
+				dispatchEvent(new Event("CHANGE"));
+			}
+			
+			protected function tiValue_focusOutHandler(event:FocusEvent):void
+			{
+				currentState="Show";
+			}
+			
+			protected function label_clickHandler(event:MouseEvent):void
+			{
+				currentState="Edit";
+			}
+			
+			protected function state1_enterStateHandler(event:FlexEvent):void
+			{
+				tiNum.text=num.toString();
+				adjustWidth();
+				callLater(tiNum.setFocus);
+			}
+			
+			protected function tiValue_changeHandler(event:TextOperationEvent):void
+			{
+				adjustWidth();
+			}
+			
+			private function adjustWidth():void{
+				tiNum.width=20+7*tiNum.text.length;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="Show"/>
+		<s:State enterState="state1_enterStateHandler(event)" name="Edit"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, _value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="CHANGE", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Label id="lbLabel" left="4" click="label_clickHandler(event)" text="{label} = {num}"
+			 verticalCenter="0"/>
+	<s:TextInput id="tiNum" includeIn="Edit" right="0" change="tiValue_changeHandler(event)"
+				 click="event.stopImmediatePropagation()" enter="tiValue_enterHandler(event)"
+				 focusOut="tiValue_focusOutHandler(event)" restrict="0-9\-\\." text="{num}"
+				 textAlign="right" verticalCenter="0"/>
+</s:HGroup>

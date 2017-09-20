@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  color="0xff0000" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze3.data.Mroom;
+			import azura.gallerid4.GalPack4;
+			
+			import org.osflash.signals.Signal;
+			
+			[Bindable]
+			public var room:Mroom=new Mroom();
+			
+			public var onSave:Signal=new Signal();
+			
+			protected function fbRoom_READYHandler(event:Event):void
+			{
+				room.me5Zforest=new GalPack4().loadFrom(fbRoom.file);
+				onSave.dispatch();
+			}
+
+			protected function lnScale_changeHandler(event:Event):void
+			{
+				room.scale=lnScale.number;
+				onSave.dispatch();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<label:LabelString2 label="uid=" string="{room.uid}"/>
+	<label:LabelNumber2 id="lnScale" label="scale=" change="lnScale_changeHandler(event)" max="100"
+					 min="10" number="{room.scale}"/>
+	<label:LabelNumber2 label="tilt=" max="90" min="-90" number="{room.tilt}"/>
+	<label:LabelNumber2 label="pan=" max="180" min="-180" number="{room.pan}"/>
+	<file:FileButton6 id="fbRoom" label="load .zforest" _ext="*.zforest"
+					  READY="fbRoom_READYHandler(event)"/>
+</s:VGroup>

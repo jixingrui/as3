@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.common.swf.ui.*"
+		 xmlns:swf="azura.common.swf.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)"
+		 clipAndEnableScrolling="true" rightClick=";">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.alert.AlertOk;
+			import azura.common.ui.alert.AlertShow;
+			import azura.common.ui.alert.AlertYesNo;
+			
+			import azura.common.algorithm.FastMath;
+			import azura.common.loaders.XmlLoader;
+			import azura.common.util.OS;
+			
+			import flash.desktop.NativeApplication;
+			
+			import mx.controls.SWFLoader;
+			import mx.events.FlexEvent;
+			
+			/*
+			* change this value each time you update the loader
+			* and the one in loader config xml
+			*/
+			public var loaderVersionLocal:int;
+			private var product:String;
+			private var website:String;
+			
+			private var loadeeSwfUrl:String;
+			private var loadeeConfigUrl:String;
+			private var loadeeVersion:String;
+			
+			private var swfLoader:SWFLoader;		
+			private var imgLoader:Loader;
+			private var urlLoaderSwf:URLLoader;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{				
+				stage.scaleMode=StageScaleMode.NO_SCALE;
+				stage.align=StageAlign.TOP_LEFT;
+				stage.addEventListener(Event.RESIZE,onResize);
+				
+				XmlLoader.load("assets/config.xml",onLoaderConfigLocal);
+			}	
+			
+			private function onLoaderConfigLocal(xml:XML):void{
+				XmlLoader.load(xml.config,onLoaderConfigRemote);
+			}
+			
+			private function onLoaderConfigRemote(xml:XML):void{
+				
+				if(xml==null){
+					AlertOk.show(onOk,"无法连接到网络","网络错误");
+					
+					function onOk(yn:Boolean):void{
+						NativeApplication.nativeApplication.exit();
+					}
+					return;
+				}
+				
+				progressBar.value=0.1;
+				
+				product=xml.product;
+				website=xml.website;
+				
+				var loaderVersionRemote:int=xml.loaderVersion;
+				
+				loadeeVersion=xml.loadeeVersion;
+				loadeeSwfUrl=xml.loadeeSwf;
+				loadeeConfigUrl=xml.loadeeConfig;
+				
+				var bgs:Vector.<String>=new Vector.<String>();					
+				for each(var x:XML in xml.bgs.url){
+					bgs.push(x[0]);
+				}				
+				
+				if(loaderVersionLocal==0){
+					AlertShow.show("loaderVersionLocal not set");
+				}else if(loaderVersionLocal!=loaderVersionRemote){	
+					updateLoader();					
+				}else{
+					var idx:int=FastMath.random(0,bgs.length-1);
+					var bgUrl:String=bgs[idx];
+					loadBackground(bgUrl);
+				}
+			}
+			
+			private function updateLoader():void{
+				if(OS.isBrowser){
+					AlertShow.show("请按F5刷新页面。如果无效请清空浏览器缓存。", product+"版本更新");
+				}else{
+					AlertYesNo.show(onYesNo,"请到官网下载最新版\r\n"+website, product+"版本更新");
+					
+					function onYesNo(yn:Boolean):void{
+						if(yn){
+							navigateToURL(new URLRequest("http://"+website));
+						}
+						
+						setTimeout(doExit,500);
+						//						stage.dispatchEvent(new SwfEvent(SwfEvent.SHUTDOWN));
+					}
+					
+					function doExit():void{
+						if(OS.isBrowser){
+							ExternalInterface.call("closeWindows()");
+						}else{
+							NativeApplication.nativeApplication.exit();
+						}
+					}
+				}
+			}
+			
+			private function loadBackground(urlBackground:String):void{	
+				imgLoader=new Loader();
+				imgLoader.contentLoaderInfo.addEventListener(Event.COMPLETE,onImageLoaded);
+				imgLoader.load(new URLRequest(urlBackground));
+			}
+			
+			private function onImageLoaded(event:Event):void{
+				progressBar.value=0.2;
+				
+				var bm:Bitmap=imgLoader.content as Bitmap;
+				imgLoading.addChild(bm);
+				bm.x=-bm.width/2;
+				bm.y=-bm.height/2;
+				
+				loadTarget();
+			}	
+			
+			private function loadTarget():void{
+				var so:SharedObject=SharedObject.getLocal("LoadeeCache");
+				var swfData:ByteArray= so.data.cache;
+				var targetVersionLocal:String=so.data.version;
+				so.close();
+				
+				if(swfData!=null && loadeeVersion==targetVersionLocal){
+					loadSwfContent(swfData);
+				}else{
+					loadSwfFile();
+				}
+			}
+			
+			private function loadSwfFile():void{
+				progressBar.value=0.3;
+				
+				urlLoaderSwf=new URLLoader();
+				urlLoaderSwf.dataFormat = URLLoaderDataFormat.BINARY; 
+				urlLoaderSwf.addEventListener(ProgressEvent.PROGRESS,onProgress);
+				urlLoaderSwf.addEventListener(Event.COMPLETE,swfDataLoaded);
+				urlLoaderSwf.load(new URLRequest(loadeeSwfUrl+"?rand="+Math.random()));
+				
+				function onProgress(pe:ProgressEvent):void{
+					progressBar.value=0.3+0.7*pe.bytesLoaded/pe.bytesTotal;
+				}
+			}
+			
+			private function swfDataLoaded(eu:Event):void{
+				
+				var swfData:ByteArray = urlLoaderSwf.data as ByteArray;
+				
+				var so:SharedObject=SharedObject.getLocal("LoadeeCache");
+				so.data.cache=swfData;
+				so.data.version=loadeeVersion;
+				so.flush();
+				
+				loadSwfContent(swfData);
+			}	
+			
+			private function loadSwfContent(swfData:ByteArray):void{
+				progressBar.value=1;
+				
+				var ctx:LoaderContext=new LoaderContext();		
+				ctx.applicationDomain=ApplicationDomain.currentDomain;
+				ctx.allowCodeImport=true;
+				ctx.parameters={"config":loadeeConfigUrl};
+				
+				swfLoader=new SWFLoader();
+				swfLoader.loaderContext=ctx;
+				swfLoader.source=swfData;
+				swfLoader.scaleContent=false;
+				swfLoader.maintainAspectRatio=false;
+				swfLoader.addEventListener(Event.COMPLETE,onSwfLoaded);
+				swfLoader.load();
+				addElement(swfLoader);	
+			}
+			
+			private function onSwfLoaded(event:Event):void{
+				swfLoader.content.addEventListener(FlexEvent.APPLICATION_COMPLETE,onSwfReady);
+			}
+			
+			private function onSwfReady(event:Event):void{
+				var app:Object = event.target.application;
+				app.width=stage.stageWidth;
+				app.height=stage.stageHeight;
+				
+				removeElement(imgLoading);	
+				removeElement(progressBar);
+			}
+			
+			private function onResize(er:Event):void{
+				if(swfLoader==null)
+					return;
+				
+				var content:Object = swfLoader.content;
+				var app:Object=content.application;
+				app.width=stage.stageWidth;
+				app.height=stage.stageHeight;
+			}
+			
+			public function onMp3Recorded(mp3:ByteArray,ms:int):void{
+				hw.onMp3Recorded(mp3,ms);
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="RECRAW", type="azura.common.swf.SwfEvent")]
+	</fx:Metadata>
+	<swf:HwShell id="hw" RECRAW="dispatchEvent(event);"/>
+	<s:SpriteVisualElement id="imgLoading" horizontalCenter="0" verticalCenter="0"/>
+	<ui:ProgressBar id="progressBar" bottom="80" horizontalCenter="0"
+					skinClass="azura.common.swf.ui.ProgressBarSkin"/>
+</s:Group>
+

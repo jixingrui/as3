@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.helios.hard10.ui.*"
+		  xmlns:seeker="azura.avalon.maze3.ui.seeker.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  width="180" height="100%" fontSize="20">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze3.data.Show;
+			import azura.avalon.maze3.data.Show;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var show:Show=new Show();
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" enabled="{drShow.selectedItem!=null}">		
+		<file:FileButton6 id="fbZebra" label="Load type image" _ext="*.zebra"/>
+	</s:VGroup>
+	<ui:Hard10UI id="drShow" x="10" y="10" width="100%" reader="{show}" title="Show"/>
+</s:VGroup>

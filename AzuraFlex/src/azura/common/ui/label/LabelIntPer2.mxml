@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<label:LabelString2 xmlns:fx="http://ns.adobe.com/mxml/2009"
+					xmlns:s="library://ns.adobe.com/flex/spark"
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					xmlns:local="*"
+					xmlns:ui="azura.common.ui.*"
+					xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.events.FlexEvent;
+			
+			private var _value:IntPercent=new IntPercent();
+			
+			public function get value():IntPercent
+			{
+				return _value;
+			}
+
+			public function set value(value:IntPercent):void
+			{
+				_value = value;
+				string=value.string;
+			}
+
+			override protected function tiString_enterHandler(event:FlexEvent):void{
+//				super.tiString_enterHandler(event);
+				
+				_value.string=tiString.text;
+				
+				super.string=_value.string;
+				
+				currentState="Show";
+				
+				dispatchEvent(new Event("change"));
+			}
+						
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</label:LabelString2>

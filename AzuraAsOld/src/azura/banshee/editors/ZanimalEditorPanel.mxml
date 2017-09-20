@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.common.ui.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" xmlns:label="azura.common.ui.label.*" xmlns:list="azura.common.ui.list.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.layers.LayerRuler;
+			import azura.banshee.zebra.Zebra;
+			import azura.banshee.zebra.ZebraShell;
+			import azura.banshee.zebra.node.ZebraNode;
+			import azura.banshee.zebra.zanimal.Zanimal;
+			import azura.banshee.zebra.zanimal.Zpose;
+			import azura.banshee.zebra.zanimal.Zrace;
+			import azura.common.algorithm.crypto.MC5Old;
+			import azura.common.algorithm.crypto.Rot;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.GalMail;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.GalleridWriter;
+			import azura.gallerid3.source.GsFile;
+			
+			[Bindable]
+			private var race:Zrace=new Zrace();
+			
+			[Bindable]
+			private var animal:Zanimal=new Zanimal();
+			
+			[Bindable]
+			private var zd:Zpose=new Zpose();
+			
+			private var layer:LayerRuler;
+			private var actor:ZebraNode;
+			
+			protected function lsRaceName_changeHandler(event:Event):void
+			{
+				race.name=lsRaceName.string;
+			}
+			
+			protected function btnSeal_clickHandler(event:MouseEvent):void
+			{
+				if(race.isReady){
+					race.sealed=true;
+					animal.race=race;					
+				}
+			}
+			
+			public function set active(value:Boolean):void{
+				if(value){
+					layer=new LayerRuler(G2dEngine.singleton().singleLayer);
+					actor=new ZebraNode(layer.canvas);
+				}else{
+					actor.dispose();
+					layer.dispose();
+					listDance.clear();
+					race.clear();
+					animal.clear();
+				}
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				var data:ZintBuffer=animal.toBytes();
+				data.compress();
+				
+				var master:String=MC5Old.hash(data);
+				Gallerid.singleton().cache(master,data,false);
+				
+				var list:Vector.<String>=new Vector.<String>();
+				list.push(master);
+				for each(var mc5:String in animal.getMe5List()){
+					list.push(mc5);
+				}
+				
+				var name:String=animal.name+'.zanimal';
+				GalleridWriter.write(name,list);
+			}
+			
+			protected function lsAnimalName_changeHandler(event:Event):void
+			{
+				animal.name=lsAnimalName.string;
+			}
+			
+			protected function listDance_MOVEHandler(event:Event):void
+			{
+				if(!race.sealed)
+					return;
+				
+				var z:Zebra=animal.getZebraByIdx(listDance.idx);
+				if(z!=null)
+					actor.zebra=z;
+			}
+			
+			protected function listDance_ADDHandler(event:Event):void
+			{
+				var zd:Zpose=new Zpose();
+				race.danceList.splice(listDance.idx+1,0,zd);
+				listDance.insert(zd);
+			}
+			
+			protected function listDance_DELETEHandler(event:Event):void
+			{
+				race.danceList.splice(listDance.idx,1);
+			}
+			
+			protected function fbDance_READYHandler(event:Event):void
+			{
+				var newPack:GsFile=new GsFile(fbDance.file);
+//				Gallerid.singleton().addPack(newPack);
+				
+				Gallerid.singleton().cacheMemFromPack(fbDance.file);
+				
+				var item:GalMail=Gallerid.singleton().getData(newPack.master);
+//				item.data.uncompress();
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				var current:Zebra=animal.getZebraByIdx(listDance.idx);
+				current.fromBytes(data);
+				
+				actor.zebra=current;
+			}
+			
+			protected function fbAnimal_READYHandler(event:Event):void
+			{
+				var newPack:GsFile=new GsFile(fbAnimal.file);
+//				Gallerid.singleton().addPack(newPack);
+				
+				var item:GalMail=Gallerid.singleton().getData(newPack.master);
+//				item.data.uncompress();
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				animal.fromBytes(data);
+				race=animal.race;
+				
+				listDance.clear();
+				for (var i:int =0;i<race.danceList.length;i++){
+					
+					var dc:Zpose=race.danceList[i];
+					
+					var shell:ZebraShell=new ZebraShell();
+					shell.zebra=animal.zebraList[i];
+					shell.name=dc.name;
+					
+					listDance.insert(shell);
+				}
+				
+				listDance.idx=0;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label y="10" color="0xffffff" horizontalCenter="0" text="动物编辑器"/>
+	<s:VGroup x="10" y="50" width="150" horizontalAlign="center" mouseDown="event.stopPropagation()"
+			  mouseUp="event.stopPropagation()">
+		<s:VGroup width="100%" horizontalAlign="center">
+			<s:HGroup>
+				<file:FileButton6 id="fbAnimal" label="读取" _ext="*.zanimal"
+								  READY="fbAnimal_READYHandler(event)"/> 
+				<s:Button id="btnSeal" label="封" click="btnSeal_clickHandler(event)"
+						  enabled="{!race.sealed}"/>
+			</s:HGroup>
+			<label:LabelString2 id="lsRaceName" label="种族" change="lsRaceName_changeHandler(event)"
+							 color="0xffffff" enabled="{!race.sealed}" string="{race.name}"/>
+			<list:ListEditor id="listDance" label="动作" ADD="listDance_ADDHandler(event)"
+						   DELETE="listDance_DELETEHandler(event)" editable="{!race.sealed}"
+						   MOVE="listDance_MOVEHandler(event)">
+			</list:ListEditor>
+		</s:VGroup>
+		<s:VGroup enabled="{race.sealed}" horizontalAlign="center">
+			<file:FileButton6 id="fbDance" label="加载动作" _ext="*.zebra"
+							  READY="fbDance_READYHandler(event)"/>
+			<label:LabelString2 id="lsAnimalName" label="名字" change="lsAnimalName_changeHandler(event)"
+							 color="0xffffff" string="{animal.name}"/>
+			<s:Button id="btnSave" label="保存" click="btnSave_clickHandler(event)"/>
+		</s:VGroup>
+	</s:VGroup>
+	<!--<s:HGroup bottom="10" horizontalCenter="0" mouseDown="event.stopPropagation()"
+	mouseUp="event.stopPropagation()">
+	<s:Button label="-" click="layer.zUp++"/>
+	<s:Button label="+" click="layer.zUp-"/>
+	</s:HGroup>-->
+</s:Group>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:editor="azura.banshee.mass.editor.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)"
+		 implements="azura.banshee.mass.view.MassTreeSyncI">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_syncher;
+			
+			import azura.banshee.engine.Statics;
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.mass.graphics.player.MassPlayerPanel2Canvas;
+			import azura.banshee.mass.model.MassTree;
+			import azura.banshee.mass.model.v3.MassTree3;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.ui.alert.Toast;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.Gal4Pack;
+			
+			private var this_:SyncherPanel;
+//			public var nativeWindow:NativeWindow;
+			
+			private var canvas:MassPlayerPanel2Canvas;
+			private var net_:SyncherNet;
+			
+			private var config:Config_syncher;
+			private var sender_receiver:Boolean;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				//				trace("stage size",stage.stageWidth,stage.stageHeight,this);
+				Statics.stage=stage;
+				this_=this;
+				StarlingAway.init(stage,holder,saReady);
+			}
+			
+			private function saReady():void{
+				StarlingAway.addStarlingLayer(starlingReady);
+			}			
+			
+			private function starlingReady(sl:StarlingLayer):void{
+				canvas=new MassPlayerPanel2Canvas();
+				canvas.init(stage,sl.root);
+				
+				config=new Config_syncher();
+				config.onReady.add(configReady);
+			}
+			
+			private function configReady():void{
+				sender_receiver=config.sender_receiver;
+				net_=new SyncherNet(config);
+				net_.cs.view=this_;
+				net_.onConnected.add(connectedToServer);
+				net_.connect();
+			}
+			
+			private function connectedToServer():void{
+				Toast.show("Connected to server");
+				loadMass();
+			}
+			
+			private function loadMass():void{
+				var massFile:File= File.applicationDirectory.resolvePath("assets/syncher.mass");
+				var master:String=new Gal4Pack().loadFrom(massFile);
+				var dump:ZintBuffer=Gal4.readSync(master);
+//				var tree:MassTree3=new MassTree3(canvas.uiLayer.zbox,null);
+//				tree.fromBytes(dump);
+				canvas.showTree(dump,new SyncherSDK());
+				
+				//channel
+				net_.cs.register(master);
+				canvas.tree.tunnel=this;
+			}
+			
+			//===================== communication ===============
+			
+			public function massSyncOut(state:String):void
+			{
+				if(sender_receiver)
+					net_.cs.send(state);
+			}
+			
+			internal function receive(msg:String):void{
+				if(sender_receiver==false)
+					canvas.tree.syncIn(msg);
+			}
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder" horizontalCenter="0" verticalCenter="0"/>
+</s:Group>

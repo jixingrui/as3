@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" gap="0">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.shine.ShineButton;
+			import azura.common.ui.shine.ShineButtonGroup;
+			
+			import mx.events.FlexEvent;
+			
+			private var _total:int;
+			public var urlNormal:String;
+			public var urlShine:String;
+			private var _idxActive:int;
+			
+			private var group:ShineButtonGroup=new ShineButtonGroup();
+			
+			public function get total():int
+			{
+				return _total;
+			}
+
+			public function set total(value:int):void
+			{
+				if(_total==value)
+					return;
+
+				clear();
+				
+				_total = value;
+				for(var i:int=0;i<total;i++){
+					var sb:ShineButton=new ShineButton();
+					sb.idle_hover_click_toggle=0;
+					sb.urlNormal=urlNormal;
+					sb.urlShine=urlShine;
+					sb.group=group;
+					addElement(sb);
+				}
+				idxActive=0;
+			}
+			
+			public function clear():void{
+				this.removeAllElements();
+			}
+
+			public function get idxActive():int
+			{
+				return _idxActive;
+			}
+
+			public function set idxActive(value:int):void
+			{
+				value=Math.max(value,0);
+				value=value%total;
+				_idxActive = value;
+				ShineButton(getElementAt(value)).shine();
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:HGroup>

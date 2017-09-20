@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 addedToStage="group1_addedToStageHandler(event)"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import azura.touch.watcherOld.WatcherDrag;
+			import azura.touch.watcherOld.WatcherEvent;
+			import azura.common.ui.shine.ShineButton;
+			import azura.common.ui.shine.ShineButtonGroup;
+			
+			import mx.events.FlexEvent;
+			
+			public var rect:Rectangle=new Rectangle();
+			public var imageList:Vector.<ShineButton>=new Vector.<ShineButton>();
+			
+			private var wg:WatcherDrag;
+			private var group:ShineButtonGroup=new ShineButtonGroup();
+			private var _topIdx:int;
+			private var lastX:int;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//				trace(x,y,name);
+			}
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				wg=new WatcherDrag(this,false);
+				wg.addEventListener(WatcherEvent.DRAG_MOVE,onDragMove);
+			}
+			
+			private function onDragMove(we:WatcherEvent):void{
+				
+				//				trace(we.delta.x,this);
+				var d:int=we.delta.x-lastX;
+				var step:int=rect.width/imageList.length;
+				//				trace("step");
+				//				trace("d=",d,"lastX=",lastX,"currentX=",we.delta.x);
+				if(d>step){
+					topIdx++;
+					lastX=we.delta.x;
+				}else if(d<-step){
+					topIdx--;
+					lastX=we.delta.x;
+				}
+			}
+			
+			public function feed(left:int,right:int,top:int,bottom:int,normalList:Vector.<String>,shineList:Vector.<String>):void{
+				
+				if(normalList.length!=shineList.length)
+					throw new Error();
+				if(normalList.length<2)
+					throw new Error();
+				
+				rect.left=left;
+				rect.right=right;
+				rect.top=top;
+				rect.bottom=bottom;
+				
+				var total:int=normalList.length;
+				for(var i:int=0;i<total;i++){
+					var image:ShineButton=new ShineButton();
+					image.group=group;
+					image.clickToSolid=true;
+//										image.idle_hover_click_toggle=1;
+					image.addEventListener("SHINE",onShine);
+					image.addEventListener("SELECT",onClickImage);
+					imageList.push(image);
+					this.addElement(image);
+					image.urlNormal=normalList[i];
+					image.urlShine=shineList[i];
+					image.x=left+(right-left)*i/(total-1)-image.bd.width/2;
+					image.y=top+(bottom-top)*i/(total-1)-image.bd.height/2;
+					//					trace(image.x,image.y,name);
+					//					image.y=top+(bottom-top)*i/total;
+					//					image.clickable=false;
+				}
+				
+				topIdx=total/2;
+			}
+			
+			public function get topIdx():int
+			{
+				return _topIdx;
+			}
+			
+			public function set topIdx(value:int):void{
+				value=Math.max(0,value);
+				value=Math.min(imageList.length-1,value);
+				_topIdx=value;
+				removeAllElements();
+				var i:int;
+				for(i=0;i<value;i++){
+					addElement(imageList[i]);
+				}
+				for(i=imageList.length-1;i>value;i--){
+					addElement(imageList[i]);
+				}
+				addElement(imageList[value]);
+				imageList[value].shine();
+			}
+			
+			protected function onShine(event:Event):void{
+				
+				var ob:Object=event.currentTarget;
+				if(!(ob is ShineButton)){
+					trace("click failed");
+					return;
+				}
+				
+				var img:ShineButton=ob as ShineButton;
+				var idx:int=0;
+				for(idx=0;idx<imageList.length;idx++){
+					if(img==imageList[idx])
+						break;
+				}
+				
+				topIdx=idx;
+				//				trace("click",idx,"top",topIdx);
+//				if(idx==topIdx){
+//					dispatchEvent(new Event("SELECT"));					
+//					//					trace("OverLayList: select",idx);
+//				}
+//				else{
+//					topIdx=idx;
+//				}
+			}
+			
+			protected function onClickImage(event:Event):void{
+				dispatchEvent(new Event("SELECT"));				
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SELECT", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:Group>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:ui1="azura.avalon.maze.ui.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  xmlns:label="azura.common.ui.label.*"
+		  xmlns:local="*"
+		  width="100%">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.animal.GalPack5;
+			import azura.banshee.animal.Zanimal4;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.maze4.service.WooReader;
+			
+			import starling.utils.Color;
+			
+			public var canvas:Maze4Canvas;
+			
+			private var _woo:WooReader;
+			
+			public function get woo():WooReader
+			{
+				return _woo;
+			}
+			
+			public function set woo(value:WooReader):void
+			{
+				_woo = value;
+				lsTag.string=value.tag;
+				fcAnimal.cbClear.selected=value.animal!=null && value.animal.length>0;
+				lbTo.text="To:"+value.doorToName;
+//				trace(value.doorToName,this);
+				
+				if(fcAnimal.cbClear.selected){
+					var gp:GalPack5=new GalPack5().fromIndex(value.animal);
+					var a:Zanimal4=new Zanimal4().fromPack(gp);
+					var normal:GalPack5=a.getShape("normal");
+//					var gp:GalPack5=new GalPack5();
+//					gp.fromIndex(normal);
+					canvas.showAnimal(normal.master,woo.x,woo.y,woo.angle);
+				}else{
+					canvas.clearAnimal();
+				}
+			}			
+			
+			public function clear():void{
+				lsTag.string="";
+				lbTo.text="To:";
+			}
+			
+			protected function lsTag_changeHandler(event:Event):void
+			{
+				woo.tag=lsTag.string;
+				save();
+			}
+			
+			private function save():void{
+				dispatchEvent(new Event("SAVE"));
+			}
+			
+			protected function fcAnimal_READYHandler(event:Event):void
+			{
+				var gp:GalPack5=new GalPack5();
+				gp.fromPack(fcAnimal.file);
+				
+				woo.animal=gp.toIndex();
+				this.woo=woo;
+				save();
+			}
+			
+			protected function btnPut_clickHandler(event:MouseEvent):void
+			{
+				canvas.itemImage.zbox.x=canvas.space.xView;
+				canvas.itemImage.zbox.y=canvas.space.yView;
+				woo.x=canvas.itemImage.zbox.x;
+				woo.y=canvas.itemImage.zbox.y;
+				save();
+//				canvas.itemImage.zbox.x;
+			}
+			
+			protected function btnJump_clickHandler(event:MouseEvent):void
+			{
+				canvas.space.look(woo.x,woo.y);
+			}
+			
+			protected function btnRotate0_clickHandler(event:MouseEvent):void
+			{
+				canvas.itemImage.zbox.angle=0;
+				woo.angle=0;
+				save();
+			}
+			
+			protected function btnRotate_clickHandler(event:MouseEvent):void
+			{
+				canvas.rotateMode();
+//				canvas.itemImage.zbox.
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SAVE", type="flash.events.Event")]
+	</fx:Metadata>
+	<!--<label:LabelNumber2 id="lsTid" label="tid=" change="lsTid_changeHandler(event)"/>-->
+	<label:LabelString2 id="lsTag" label="Tag=" change="lsTag_changeHandler(event)"
+						color="{Color.WHITE}"/>
+	<local:FileClear7 id="fcAnimal" label="load .animal" _ext="*.animal"
+					  READY="fcAnimal_READYHandler(event)"/>
+	<s:HGroup width="100%">
+		<s:Button id="btnJump" label="jump to" click="btnJump_clickHandler(event)"/>
+		<s:Button id="btnPut" label="put here" click="btnPut_clickHandler(event)"/>
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<s:Button id="btnRotate" label="rotate" click="btnRotate_clickHandler(event)"/>
+		<s:Button id="btnRotate0" label="rotate 0" click="btnRotate0_clickHandler(event)"/>
+	</s:HGroup>
+	<s:HGroup width="100%" height="100%" color="{Color.WHITE}">
+			<s:Label id="lbTo" text="To:" verticalCenter="0"/>
+	</s:HGroup>
+</s:VGroup>

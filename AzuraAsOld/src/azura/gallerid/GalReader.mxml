@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  currentState="Free" mouseDown="event.stopImmediatePropagation()"
+		  mouseMove="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		  rightMouseDown="event.stopImmediatePropagation()"
+		  chromeColor.Busy="#FF0000"
+		  click.Free="button1_clickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.gallerid.gal.FileStreamSource;
+			
+			import flash.filesystem.File;
+			
+			public var _ext:String='';		
+			public var _extFunc:Function;
+			private var file:File;
+			
+			public var source:FileStreamSource;
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				if(_extFunc!=null)
+					_ext=_extFunc.call();
+				
+				file=new File();
+				file.addEventListener(Event.SELECT,fileSelected);
+				if (_ext == '')
+				{
+					file.browseForOpen('');
+				}
+				else
+				{
+					var ff:FileFilter=new FileFilter(_ext, _ext);
+					file.browseForOpen('',[ff]);
+				}
+			}
+			
+			private function fileSelected(event:Event):void{				
+				currentState='Busy';
+				source=new FileStreamSource();
+				
+				source.open(file);
+				
+				currentState='Free';
+				dispatchEvent(new Event("READY"));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<mx:State name="Free"/>
+		<mx:State name="Busy"/>
+	</s:states>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="READY", type="flash.events.Event")]
+	</fx:Metadata>
+</s:Button>

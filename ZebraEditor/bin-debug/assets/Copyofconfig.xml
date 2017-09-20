@@ -1,0 +1,13 @@
+﻿<root>
+	<maze2>
+		<host>luna</host>
+		<port>7442</port>
+	</maze2>
+	<mc5>
+		<t>http://cdn.shoujiguang.com/mc5/t</t>
+		<s>http://cdn.shoujiguang.com/mc5/s</s>
+		<m>http://cdn.shoujiguang.com/mc5/m</m>
+		<l>http://cdn.shoujiguang.com/mc5/l</l>
+		<x>http://cdn.shoujiguang.com/mc5/x</x>
+	</mc5>
+</root>

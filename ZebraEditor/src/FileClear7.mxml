@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  mouseDown="event.stopImmediatePropagation()" mouseMove="event.stopImmediatePropagation()"
+		  mouseUp="event.stopImmediatePropagation()"
+		  rightMouseDown="event.stopImmediatePropagation()">
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.filesystem.File;
+			
+			public var _ext:String='';		
+
+			public function get hasContent():Boolean
+			{
+				return cbClear.selected;
+			}
+
+			public function clear():void
+			{
+				cbClear.selected=false;
+			}
+
+			public var _extFunc:Function;
+			public var file:File;
+			
+			[Bindable]
+			public var label:String;
+			
+						
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				if(_extFunc!=null)
+					_ext=_extFunc.call();
+				
+				file=new File();
+				file.addEventListener(Event.SELECT,fileSelected);
+				if (_ext == '')
+				{
+					file.browseForOpen('');
+				}
+				else
+				{
+					var ff:FileFilter=new FileFilter(_ext, _ext);
+					file.browseForOpen('',[ff]);
+				}
+			}
+			
+			private function fileSelected(event:Event):void{	
+				cbClear.selected=true;
+				dispatchEvent(new Event("READY"));
+			}
+			
+			protected function cbClear_changeHandler(event:Event):void
+			{
+				dispatchEvent(new Event("CLEAR"));
+				cbClear.selected=false;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="READY", type="flash.events.Event")]
+		[Event(name="CLEAR", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Button id="btnLoad" click="button1_clickHandler(event)" label="{label}" enabled="{cbClear.selected==false}"/>
+	<s:CheckBox id="cbClear" change="cbClear_changeHandler(event)" enabled="{cbClear.selected}"/>
+</s:HGroup>

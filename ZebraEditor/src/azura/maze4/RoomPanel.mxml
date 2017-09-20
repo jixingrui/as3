@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:label="azura.common.ui.label.*"
+		  xmlns:local="*"
+		  xmlns:list="azura.common.ui.list.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.animal.GalPack5;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.karma.run.Karma;
+			import azura.maze4.service.Connection;
+			import azura.maze4.service.RoomReader;
+			
+			import starling.utils.Color;
+			
+			private var _room:RoomReader;
+			public var canvas:Maze4Canvas;
+			
+			public function get room():RoomReader
+			{
+				return _room;
+			}
+			
+			public function clear():void{
+				lsTag.string="";
+				fcImage.cbClear.selected=false;
+				fcMask.cbClear.selected=false;
+				leBase.clear();
+			}
+			
+			public function set room(value:RoomReader):void
+			{
+				_room = value;
+				lsTag.string=value.tag;
+				fcImage.cbClear.selected=(value.groundImage!=null && value.groundImage.length>0);
+				fcMask.cbClear.selected=(value.mask!=null && value.mask.length>0);
+				var bl:Vector.<Karma>=value.baseList.getList();
+				leBase.clear();
+				for(var i:int=0;i<bl.length;i++){
+					var bs:BaseShell=new BaseShell(Connection.ksMaze);
+					bs.base.fromKarma(bl[i]);
+					leBase.insert(bs);
+				}
+				leBase.idx=0;
+				
+				//show
+				showImage(value.groundImage);
+			}
+			
+			private function showImage(zb:ZintBuffer):void{
+				if(zb==null||zb.length==0){
+					canvas.landImage.clear();
+				}else{
+					var gp:GalPack5=new GalPack5().fromIndex(zb);
+					canvas.loadZebra(gp.master);
+				}
+			}
+			
+			protected function fcImage_READYHandler(event:Event):void
+			{
+				var gp:GalPack5=new GalPack5();
+				gp.fromPack(fcImage.file);
+				room.groundImage=gp.toIndex();
+				
+				canvas.loadZebra(gp.master);
+				save();
+			}
+			
+			protected function fcMask_READYHandler(event:Event):void
+			{
+				var gp:GalPack5=new GalPack5();
+				gp.fromPack(fcMask.file);
+				room.mask=gp.toIndex();
+
+				save();
+			}
+			
+			protected function fcImage_CLEARHandler(event:Event):void
+			{
+				room.groundImage=null;
+				canvas.landImage.clear();
+				save();
+			}
+			
+			private function save():void{
+				dispatchEvent(new Event("SAVE"));
+			}
+			
+			protected function lsTag_changeHandler(event:Event):void
+			{
+				room.tag=lsTag.string;
+				save();
+			}
+			
+			protected function fcMask_CLEARHandler(event:Event):void
+			{
+				room.mask=null;
+				save();
+			}
+			
+			protected function leBase_ADDHandler(event:Event):void
+			{
+				var item:BaseShell=new BaseShell(Connection.ksMaze);
+				leBase.insert(item);
+				saveBase();
+			}
+			
+			private function saveBase():void{
+				var list:Vector.<Karma>=room.baseList.getList();
+				list.splice(0,list.length);
+				for each(var item:BaseShell in leBase.list){
+					list.push(item.base.toKarma());
+				}
+				save();
+			}
+			
+			protected function fcBase_READYHandler(event:Event):void
+			{
+				var item:BaseShell=leBase.current as BaseShell;
+				item.base.zbase=FileUtil.read(fcBase.file);
+				saveBase();
+			}
+			
+			protected function leBase_RENAMEHandler(event:Event):void
+			{
+				saveBase();
+			}
+			
+			protected function leBase_DELETEHandler(event:Event):void
+			{
+				saveBase();
+			}
+			
+			protected function leBase_MOVEHandler(event:Event):void
+			{
+				var item:BaseShell=leBase.current as BaseShell;
+				fcBase.cbClear.selected=(item.base.zbase!=null && item.base.zbase.length>0);
+			}
+			
+			protected function fcBase_CLEARHandler(event:Event):void
+			{
+				var item:BaseShell=leBase.current as BaseShell;
+				item.base.zbase=null;
+				saveBase();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SAVE", type="flash.events.Event")]
+	</fx:Metadata>
+	<label:LabelString2 id="lsTag" label="tag=" change="lsTag_changeHandler(event)"
+						color="{Color.WHITE}"/>
+	<local:FileClear7 id="fcImage" label="load .zebra" _ext="*.zebra"
+					  CLEAR="fcImage_CLEARHandler(event)" READY="fcImage_READYHandler(event)"/>
+	<local:FileClear7 id="fcMask" label="load .zmask" _ext="*.zmask"
+					  CLEAR="fcMask_CLEARHandler(event)" READY="fcMask_READYHandler(event)"/>
+	<list:ListEditor id="leBase" label="地基" ADD="leBase_ADDHandler(event)"
+					 DELETE="leBase_DELETEHandler(event)" MOVE="leBase_MOVEHandler(event)"
+					 RENAME="leBase_RENAMEHandler(event)"/>
+	<local:FileClear7 id="fcBase" label="load .map" _ext="*.map"
+					  CLEAR="fcBase_CLEARHandler(event)" enabled="{leBase.idx&gt;=0}"
+					  READY="fcBase_READYHandler(event)"/>
+</s:VGroup>

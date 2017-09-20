@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:hard11="azura.karma.hard11.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 xmlns:ns1="*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_junior;
+			
+			import azura.banshee.engine.Statics;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.junior.service.ConceptReader;
+			import azura.junior.service.Connection;
+			import azura.junior.service.IoType;
+			import azura.junior.service.JuniorHardE;
+			import azura.junior.service.TriggerReader;
+			
+			import spark.events.TextOperationEvent;
+			
+			import zz.karma.JuniorEdit.K_Idea;
+			
+			private var net_:Connection;
+			
+			[Bindable]
+			public var triggerReader:TriggerReader;
+			
+			[Bindable]
+			public var conceptReader:ConceptReader;
+			
+			public var idea:K_Idea;
+			
+			public static var me:Junior3Panel;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				me=this;
+				Statics.stage=stage;
+				
+				var config:Config_junior=new Config_junior();
+				config.onReady.add(onReady);
+				function onReady():void{
+					net_=new Connection(config);
+					Connection.hubCreated.addOnce(register);
+					Connection.juniorCreated.addOnce(juniorCreated);
+					net_.connect();
+				}
+			}
+			
+			private function register():void{
+				Connection.hub.register(JuniorHardE.script,hdScript);
+				Connection.hub.register(JuniorHardE.role,hdRole);
+				Connection.hub.register(JuniorHardE.role_copy,hdRoleCopy);
+				Connection.hub.register(JuniorHardE.concept,hdConcept);
+				Connection.hub.register(JuniorHardE.cause,hdCause);
+				Connection.hub.register(JuniorHardE.trigger,hdTrigger);
+				Connection.hub.register(JuniorHardE.conceptCopy,hdConceptCopy);
+				Connection.hub.register(JuniorHardE.identity,hdIdentity);
+				
+				hdScript.start();
+				hdIdentity.start();
+			}
+			
+			private function juniorCreated():void{
+				conceptReader=new ConceptReader();
+				triggerReader=new TriggerReader();
+			}
+			
+			protected function liOnTurn_changeHandler(event:Event):void
+			{
+				triggerReader.on=liOnTurn.number;
+				hdTrigger.save();
+			}
+			
+			protected function liOffTurn_changeHandler(event:Event):void
+			{
+				triggerReader.off=liOffTurn.number;
+				hdTrigger.save();
+			}
+			
+			protected function hdConcept_SELECTHandler(event:Event):void
+			{
+				updateConcept();
+				Connection.me.junior.selectIdea();
+			}
+			
+			public function showIdea(idea:K_Idea):void{
+				this.idea=idea;
+				cbDefaultValue.selected=idea.defaultValue;
+				cbFlashy.selected=idea.flashy;
+				cbOutLink.selected=idea.outLink;
+				taNoteIdea.text=idea.note;
+			}
+			
+			private function updateConcept():void{				
+				if(conceptReader.ioType==IoType.input)
+					rbInput.selected=true;
+				else if(conceptReader.ioType==IoType.internal_)
+					rbInternal.selected=true;
+				else if(conceptReader.ioType==IoType.ask)
+					rbAsk.selected=true;
+				else if(conceptReader.ioType==IoType.output)
+					rbOutput.selected=true;
+				else{
+					rbInput.selected=false;
+					rbInternal.selected=false;
+					rbOutput.selected=false;
+					rbAsk.selected=false;
+				}
+				
+//				cbFlashy.selected=conceptReader.flashy;
+				
+				cbCounter.selected=conceptReader.counterTrigger>0;
+				
+				liCap.number=conceptReader.counterTrigger;
+				
+				taNote.text=conceptReader.note;
+				
+			}
+			
+			protected function rgIoType_changeHandler(event:Event):void
+			{
+				if(rbInput.selected)
+					conceptReader.ioType=IoType.input;
+				else if(rbInternal.selected)
+					conceptReader.ioType=IoType.internal_;
+				else if(rbOutput.selected)
+					conceptReader.ioType=IoType.output;
+				else if(rbAsk.selected)
+					conceptReader.ioType=IoType.ask;
+				else
+					conceptReader.ioType=IoType.empty;
+				hdConcept.save();
+			}
+			
+			
+			protected function cbCounter_changeHandler(event:Event):void
+			{
+				if(cbCounter.selected)
+					conceptReader.counterTrigger=1;
+				else
+					conceptReader.counterTrigger=0;
+				hdConcept.save();
+			}
+			
+			protected function liCap_changeHandler(event:Event):void
+			{
+				conceptReader.counterTrigger=liCap.number;
+				hdConcept.save();
+			}
+			
+			protected function cbFlashy_changeHandler(event:Event):void
+			{
+//				conceptReader.flashy=cbFlashy.selected;
+//				hdConcept.save();
+				saveIdea();
+			}
+			
+			protected function taNote_changeHandler(event:TextOperationEvent):void
+			{
+				conceptReader.note=taNote.text;
+				hdConcept.save();
+			}
+			
+			protected function hdConcept_UPDATEHandler(event:Event):void
+			{
+				updateConcept();
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.junior.save();
+			}
+			
+			protected function btnWipe_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.junior.wipe();
+			}
+			
+			protected function btnSdk_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.junior.sdk();
+			}
+			
+			protected function fbLoad_READYHandler(event:Event):void
+			{
+				var data:ZintBuffer=FileUtil.read(fbLoad.file);
+				Connection.me.junior.load(data);
+			}
+			
+			protected function btnReport_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.junior.report(hdConcept.selectedItem.name);
+			}
+			
+			protected function btnTest_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.junior.test(hdScript.selectedItem.name);
+			}
+			
+			protected function cbTestValue_changeHandler(event:Event):void
+			{
+				saveIdea();
+			}
+			
+			private function saveIdea():void{
+				idea.defaultValue=cbDefaultValue.selected;
+				idea.flashy=cbFlashy.selected;
+				idea.outLink=cbOutLink.selected;
+				idea.note=taNoteIdea.text;
+				Connection.me.junior.saveIdea(idea);
+			}
+			
+			protected function taNoteIdea_changeHandler(event:TextOperationEvent):void
+			{
+				saveIdea();
+			}
+			
+			protected function cbOutLink_changeHandler(event:Event):void
+			{
+				saveIdea();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="rgIoType" change="rgIoType_changeHandler(event)"/>
+	</fx:Declarations>
+	<s:HGroup width="100%" height="100%">
+		<s:HGroup width="100%" height="100%">
+			<s:VGroup height="100%" horizontalAlign="center">
+				<hard11:Hard11UI id="hdScript" title="策略" deleteConfirm="true"/>
+				<s:HGroup gap="1">
+					<s:Button id="btnSave" width="65" label="Save"
+							  click="btnSave_clickHandler(event)"/>
+					<file:FileButton6 id="fbLoad" width="65" label="Load" _ext="*.jdb"
+									  READY="fbLoad_READYHandler(event)"/>
+				</s:HGroup>
+				<s:HGroup gap="1">
+					<s:Button id="btnSdk" width="65" label="java" click="btnSdk_clickHandler(event)" visible="false"/>
+					<s:Button id="btnWipe" width="65" label="Wipe"
+							  click="btnWipe_clickHandler(event)"/>
+				</s:HGroup>
+			</s:VGroup>
+			<s:VGroup width="200" height="100%" enabled="{hdScript.selectedItem!=null}">
+				<hard11:Hard11UI id="hdRole" width="100%" title="职务"/>	
+				<hard11:Hard11UI id="hdRoleCopy" width="100%" title="职务(只读)"/>
+			</s:VGroup>
+			<hard11:Hard11UI id="hdConcept" width="250" enabled="{hdScript.selectedItem!=null}"
+							 reader="{conceptReader}" SELECT="hdConcept_SELECTHandler(event)"
+							 title="意识" UPDATE="hdConcept_UPDATEHandler(event)"/>
+			<mx:VRule height="100%"/>
+			<s:BorderContainer height="100%" enabled="{hdConcept.selectedItem!=null}">
+				<s:VGroup height="100%" horizontalAlign="center" verticalAlign="middle">
+					<mx:HRule width="100%"/>					
+					<s:HGroup width="100%" horizontalAlign="center" verticalAlign="middle">
+						<s:CheckBox id="cbFlashy" label="flashy"
+									change="cbFlashy_changeHandler(event)"
+									skinClass="azura.common.ui.skin.LargeCheckBoxSkin"/>
+						<s:CheckBox id="cbDefaultValue" label="默认值" change="cbTestValue_changeHandler(event)"
+									skinClass="azura.common.ui.skin.LargeCheckBoxSkin"/>
+						<s:CheckBox id="cbOutLink" label="OutLink" change="cbOutLink_changeHandler(event)"
+									skinClass="azura.common.ui.skin.LargeCheckBoxSkin"/>
+					</s:HGroup>
+					<s:HGroup>
+						<s:Button id="btnTest" label="单元测试" click="btnTest_clickHandler(event)"/>
+						<s:Button id="btnReport" label="查看关系" click="btnReport_clickHandler(event)"/>
+					</s:HGroup>
+					<s:TextArea id="taNoteIdea" width="100%" height="200" change="taNoteIdea_changeHandler(event)"/>		
+					<mx:HRule width="100%" height="4"/>
+					<s:VGroup>
+						<s:HGroup verticalAlign="middle">
+							<s:RadioButton id="rbInput" label="input" groupName="rgIoType"
+										   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+							<s:RadioButton id="rbAsk" label="ask" groupName="rgIoType"
+										   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+							<s:RadioButton id="rbInternal" label="internal" groupName="rgIoType"
+										   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+							<s:RadioButton id="rbOutput" label="output" groupName="rgIoType"
+										   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+						</s:HGroup>
+					</s:VGroup>
+					<mx:HRule width="100%"/>
+					<s:HGroup gap="20" verticalAlign="middle">
+						<label:LabelInt id="liCap" visible="{cbCounter.selected}" width="100"
+										label="trigger=" change="liCap_changeHandler(event)" min="1"
+										number="1"/>
+						<s:CheckBox id="cbCounter" label="计数器"
+									change="cbCounter_changeHandler(event)"
+									skinClass="azura.common.ui.skin.LargeCheckBoxSkin"/>
+					</s:HGroup>
+					<mx:HRule width="100%"/>
+					<s:TextArea id="taNote" width="100%" height="100%"
+								change="taNote_changeHandler(event)"/>				
+					<s:HGroup verticalAlign="bottom">
+						<s:Label enabled="false" fontSize="24" text="《卜之 v17.6.3》"/>
+						<mx:LinkButton enabled="false" fontSize="16" label="www.botwill.com"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:BorderContainer>
+			<s:VGroup width="250" height="100%" horizontalAlign="center" enabled="{hdConcept.selectedItem!=null}">
+				<hard11:Hard11UI id="hdCause" width="100%" title="逻辑与(状态同步)"/>
+				<hard11:Hard11UI id="hdTrigger" width="100%" reader="{triggerReader}" title="顺序执行"/>
+				<s:HGroup visible="{hdTrigger.selectedItem!=null}" width="100%">
+					<label:LabelInt id="liOnTurn" label="on = "
+									change="liOnTurn_changeHandler(event)" color="0xffffff"
+									number="{triggerReader.on_}"/>
+					<label:LabelInt id="liOffTurn" label="off = "
+									change="liOffTurn_changeHandler(event)" color="0xffffff"
+									number="{triggerReader.off_}"/>		
+				</s:HGroup>
+			</s:VGroup>
+			<mx:VRule height="100%"/>
+			<hard11:Hard11UI id="hdConceptCopy" width="250" height="100%"
+							 enabled="{hdScript.selectedItem!=null}" title="意识(只读)"/>
+			<hard11:Hard11UI id="hdIdentity" width="200" title="职业"/>
+		</s:HGroup>
+	</s:HGroup>
+</s:Group>

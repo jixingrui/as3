@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:editor="azura.banshee.mass.editor.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import aaa.videoImp.VideoSwitch;
+			
+			import away3d.core.managers.Stage3DManager;
+			import away3d.core.managers.Stage3DProxy;
+			import away3d.events.Stage3DEvent;
+			
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.engine.starling_away.StarlingRoot;
+			import azura.banshee.mass.layer.ZuiPlayLayer2;
+			import azura.banshee.mass.model.MassTree;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.ui.alert.Toast;
+			import azura.gallerid4.Gal4;
+			
+			import mx.events.FlexEvent;
+			
+			import starling.core.Starling;
+			
+			public var zuiLayer:ZuiPlayLayer2;
+			
+			public var nativeWindow:NativeWindow;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Toast.show(stage.stageWidth+","+stage.stageHeight);
+				StarlingAway.init(stage,holder,loadStage3D);
+			}
+			
+			private function loadStage3D():void{
+				fbLoad.visible=true;
+				StarlingAway.addStarlingLayer(ready);
+			}			
+			
+			private function ready(sl:StarlingLayer):void{
+				zuiLayer=new ZuiPlayLayer2(new VideoSwitch());
+				zuiLayer.init(stage,sl.root);
+			}
+			
+			protected function fbLoad_READYHandler(event:Event):void
+			{
+				fbLoad.visible=false;
+				screenPanel.visible=false;
+				
+				var master:String=Gal4.loadFrom(fbLoad.file);
+				var dump:ZintBuffer=Gal4.readSync(master);
+				
+				var tree:MassTree=new MassTree();
+				tree.fromBytes(dump);
+				
+				zuiLayer.showTree(tree);
+				//				zuiLayer.treeView.user=new VideoSwitch();
+			}
+			
+			protected function screenPanel_changeHandler(event:Event):void
+			{
+				nativeWindow.width=screenPanel.w+6;
+				nativeWindow.height=screenPanel.h+40;
+				
+				//				zuiLayer.space.look(0,0,screenPanel.w,screenPanel.h);
+				zuiLayer.space.viewSizeScaled(screenPanel.w,screenPanel.h);
+				zuiLayer.space.look(0,0);
+			}
+			
+			protected function screenPanel_creationCompleteHandler(event:FlexEvent):void
+			{
+				screenPanel.w=nativeWindow.width;
+				screenPanel.h=nativeWindow.height;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				zuiLayer.space.scale*=0.8;
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				zuiLayer.space.scale/=0.8;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder" horizontalCenter="0" verticalCenter="0"/>
+	<editor:ScreenPanel id="screenPanel" change="screenPanel_changeHandler(event)"
+						creationComplete="screenPanel_creationCompleteHandler(event)"
+						horizontalCenter="0" verticalCenter="-100"/>
+	<file:FileButton6 id="fbLoad" visible="true" label="读取.mass文件" _ext="*.mass" fontSize="24"
+					  horizontalCenter="0" READY="fbLoad_READYHandler(event)" verticalCenter="0"/>
+	<s:HGroup bottom="30" color="0" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="-" click="btnZoomOut_clickHandler(event)"/>
+		<s:Button id="btnZoomIn" label="+" click="btnZoomIn_clickHandler(event)"/>
+	</s:HGroup>
+</s:Group>

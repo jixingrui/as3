@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:editor="azura.banshee.mass.editor.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  xmlns:tool="azura.banshee.mass.tool.*"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:label="azura.common.ui.label.*"
+		  width="150" fontSize="18" horizontalAlign="center"
+		  keyDown="event.stopImmediatePropagation()" keyUp="event.stopImmediatePropagation()"
+		  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.mass.model.MassBox;
+			import azura.banshee.zebra.Zebra3;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.Gal4Pack;
+			
+			import mx.events.FlexEvent;
+			
+			private var _massBox:MassBox=new MassBox();
+			
+			[Bindable]
+			private var hasImage:Boolean=false;
+			
+			[Bindable]
+			public var hasText:Boolean=false;
+//			[Bindable]
+//			public var zfont:Zfont;
+			
+			[Bindable]
+			public function get massBox():MassBox
+			{
+				return _massBox;
+			}
+			
+			public function set massBox(value:MassBox):void
+			{
+				_massBox = value;
+				updateVisual();
+			}
+			
+			public function updateVisual():void{
+				
+				propPanel.bs=_massBox.propSet;
+				hasImage=_massBox.me5_zebra.length>0;
+				
+				dir9.select9=_massBox.align;
+				lipX.value=_massBox.x;
+				lipY.value=_massBox.y;
+				lipW.value=_massBox.w;
+				lipH.value=_massBox.h;
+			}
+			
+			protected function fbImage_READYHandler(event:Event):void
+			{
+				var me5:String=new Gal4Pack().loadFrom(fbImage.file);
+				_massBox.me5_zebra=me5;
+				var zb:ZintBuffer=Gal4.readSync(me5);
+				zb.uncompress();
+				var zebra:Zebra3=new Zebra3();
+				zebra.fromBytes(zb);
+				_massBox.w.value=zebra.boundingBox.width;
+				_massBox.h.value=zebra.boundingBox.height;
+				_massBox.w.int_percent=true;
+				_massBox.h.int_percent=true;
+				updateVisual();
+				change();
+			}
+			
+			public function change():void{
+				dispatchEvent(new Event("change"));
+			}
+			
+			protected function dir9_changeHandler(event:Event):void
+			{
+				_massBox.align=dir9.select9;
+				change();
+			}
+			
+			protected function lipX_changeHandler(event:Event):void
+			{
+				_massBox.x=lipX.value;
+				change();
+			}
+			
+			protected function lipY_changeHandler(event:Event):void
+			{
+				_massBox.y=lipY.value;
+				change();
+			}
+			
+			protected function lipW_changeHandler(event:Event):void
+			{
+				_massBox.w=lipW.value;
+				change();
+			}
+			
+			protected function lipH_changeHandler(event:Event):void
+			{
+				_massBox.h=lipH.value;
+				change();
+			}
+			
+			protected function propPanel_changeHandler(event:Event):void
+			{
+				_massBox.propSet=propPanel.bs;
+				change();
+			}
+			
+			protected function cbHasImage_changeHandler(event:Event):void
+			{
+				_massBox.me5_zebra='';
+				change();
+				hasImage=false;
+			}
+			
+			protected function fbFont_READYHandler(event:Event):void
+			{
+				var zb:ZintBuffer=FileUtil.read(fbFont.file);
+//				zfont=new Zfont();
+				massBox.zfont.fromBytes(zb);
+				
+				change();
+			}
+			
+			protected function tiText_enterHandler(event:FlexEvent):void
+			{
+				massBox.zfont.text=tiText.text;
+				change();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	<editor:PropPanel id="propPanel" change="propPanel_changeHandler(event)"/>
+	<tool:Dir9 id="dir9" change="dir9_changeHandler(event)"/>
+	<s:HGroup width="150" gap="2">
+		<label:LabelIntPer2 id="lipX" label="x" change="lipX_changeHandler(event)" string="0"/>
+		<label:LabelIntPer2 id="lipY" label="y" change="lipY_changeHandler(event)" string="0"/>
+	</s:HGroup>
+	<s:HGroup width="150" gap="2">
+		<label:LabelIntPer2 id="lipW" label="w" change="lipW_changeHandler(event)" string="50%"/>
+		<label:LabelIntPer2 id="lipH" label="h" change="lipH_changeHandler(event)" string="50%"/>
+	</s:HGroup>
+	<s:HGroup gap="2">		
+		<file:FileButton6 id="fbImage" width="60" label="上图" _ext="*.zebra" color="0"
+						  READY="fbImage_READYHandler(event)"/>
+		<s:CheckBox id="cbHasImage" change="cbHasImage_changeHandler(event)" enabled="{hasImage}"
+					selected="{hasImage}"/>
+	</s:HGroup>
+	<file:FileButton6 id="fbFont" width="60" label="上字" _ext="*.zfont" color="0"
+					  READY="fbFont_READYHandler(event)"/>
+	<s:TextInput id="tiText" visible="{massBox.zfont.text.length>0}" width="100%" color="0"
+				 enter="tiText_enterHandler(event)" text="{massBox.zfont.text}"/>
+</s:VGroup>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  currentState="Free" mouseDown="event.stopImmediatePropagation()"
+		  mouseMove="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		  rightMouseDown="button1_rightMouseDownHandler(event)"
+		  chromeColor.Busy="#FF0000"
+		  click.Free="button1_clickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.collections.ZintBuffer;
+			
+			import flash.utils.setTimeout;
+			
+			public var _ext:String='';			
+			private var fileList:FileReferenceList;
+			private var locked:Boolean=false;
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				fileList=new FileReferenceList();
+				fileList.addEventListener(Event.SELECT, listSelected);
+				
+				if (_ext == '')
+				{
+					fileList.browse();
+				}
+				else
+				{
+					var ff:FileFilter=new FileFilter(_ext, _ext);
+					fileList.browse([ff]);
+				}
+				
+				function listSelected(e:Event):void
+				{
+					currentState='Busy';
+					loadOne();
+				}						
+			}
+			
+			public function set _locked(value:Boolean):void{
+				locked=value;
+				tryAnother();
+			}
+			
+			private function tryAnother():void{
+				if(!locked){
+					if(fileList.fileList.length>0){
+						loadOne();
+					}else{
+						currentState='Free';							
+					}
+				}
+			}
+			
+			private var fr_:FileReference;
+			
+			private function loadOne():void{
+				
+				fr_=fileList.fileList.shift();
+				fr_.addEventListener(Event.COMPLETE,loaded,false,0,true);
+				fr_.load();
+				trace("FileButton: loading");
+				function loaded(event:Event):void{
+					trace("FileButton: loaded");
+					var e4:FileButton4Event=new FileButton4Event();
+					e4._data=fr_.data;
+					e4._fileName=fr_.name;
+					dispatchEvent(e4);
+					
+//					tryAnother();			
+					setTimeout(tryAnother,0);
+				}
+			}
+			
+			protected function button1_rightMouseDownHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				event.stopImmediatePropagation();
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<mx:State name="Free"/>
+		<mx:State name="Busy"/>
+	</s:states>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="_FILEREADY", type="azura.common.ui.FileButton4Event")]
+	</fx:Metadata>
+</s:Button>

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.common.ui.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" xmlns:list="azura.common.ui.list.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.layers.LayerZcombo;
+			import azura.banshee.zebra.Zebra;
+			import azura.banshee.zebra.node.ZebraNode;
+			import azura.banshee.zebra.ZebraShell;
+			import azura.banshee.zebra.Zcombo;
+			import azura.banshee.zebra.Zimage;
+			import azura.common.algorithm.FastMath;
+			import azura.common.algorithm.crypto.MC5Old;
+			import azura.common.algorithm.crypto.Rot;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.GalMail;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.GalleridWriter;
+			import azura.gallerid3.source.GsFile;
+			
+			[Bindable]
+			private var zebra:Zebra=new Zebra();
+			private var zcomboPack:GsFile;
+			private var layer:LayerZcombo;
+			private var actor:ZebraNode;
+			
+			private function get combo():Zcombo{
+				return zebra.branch as Zcombo;
+			}
+			
+			public function set active(value:Boolean):void{
+				if(value){
+					layer=new LayerZcombo(G2dEngine.singleton().singleLayer);
+					layer.onPut.add(onPut);
+					
+//					zebra.format=Zebra.zcombo;
+					zebra.branch=new Zcombo();
+					
+					actor=new ZebraNode(layer.canvas);
+					
+					stage.addEventListener(KeyboardEvent.KEY_DOWN,onPress);
+				}else{
+					stage.removeEventListener(KeyboardEvent.KEY_DOWN,onPress);
+					layer.onPut.remove(onPut);
+					
+					actor.dispose();
+					layer.dispose();
+					listParts.clear();
+				}
+			}
+			
+			protected function fbZcombo_READYHandler(event:Event):void
+			{
+				var newPack:GsFile=new GsFile(fbZcombo.file);
+//				Gallerid.singleton().addPack(newPack);
+				
+				var item:GalMail=Gallerid.singleton().getData(newPack.master);
+//				item.data.uncompress();
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				var newZ:Zebra=new Zebra();
+				newZ.fromBytes(data);
+				
+//				if(newZ.format!=Zebra.zcombo){
+					newPack.dispose();
+//					Gallerid.singleton().removePack(newPack);
+					return;
+//				}
+				
+//				if(zcomboPack!=null)
+//					zcomboPack.dispose();
+////					Gallerid.singleton().removePack(zcomboPack);
+//				zcomboPack=newPack;
+//				
+//				zebra=newZ;
+//				updateList();
+//				actor.zebra=zebra;
+			}
+			
+			private function get currentShell():ZebraShell{
+				return listParts.current as ZebraShell;
+			}
+			
+			protected function fbPart_READYHandler(event:Event):void
+			{
+				var newPack:GsFile=new GsFile(fbPart.file);
+//				Gallerid.singleton().addPack(newPack);
+				
+				var item:GalMail=Gallerid.singleton().getData(newPack.master);
+//				item.data.uncompress();
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				var part:Zebra=new Zebra();
+				part.fromBytes(data);
+				
+				if(part.type==Zebra.zimage||part.type==Zebra.zmatrix){
+					currentPart.eat(part);
+					actor.zebra=zebra;
+					
+					if(currentShell.source!=null)
+						currentShell.source.dispose();
+//						Gallerid.singleton().removePack(currentShell.source);
+					currentShell.source=newPack;
+				}else{
+					newPack.dispose();
+//					Gallerid.singleton().removePack(newPack);
+				}
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				var data:ZintBuffer=zebra.toBytes();
+				data.compress();
+				
+//				var master:String=Gallerid.singleton().cache(data);
+				
+				var master:String=MC5Old.hash(data);
+				Gallerid.singleton().cache(master,data,false);
+				
+				var list:Vector.<String>=new Vector.<String>();
+				list.push(master);
+				
+				for each(var mc5:String in zebra.getMe5List()){
+					list.push(mc5);
+				}
+				var name:String=FastMath.random(0,100)+'.zebra';
+				GalleridWriter.write(name,list);
+			}
+			
+			private function get currentPart():Zebra{
+				return combo.partList[listParts.idx];
+			}
+			
+			private function onPut(x:int,y:int,angle:int):void{
+				
+				if(currentPart.branch is Zimage){
+					var z:Zimage=currentPart.branch as Zimage;
+					if(z.pyramid.zMax>2)
+						return;
+				}
+				
+				currentPart.x=x;
+				currentPart.y=y;
+				currentPart.angle=angle;
+				
+				actor.zebra=zebra;
+			}
+			
+			protected function listParts_ADDHandler(event:Event):void
+			{
+				var shell:ZebraShell=new ZebraShell();
+				shell.zebra=new Zebra();
+				
+				combo.partList.splice(listParts.idx+1,0,shell.zebra);
+				listParts.insert(shell);
+			}
+			
+			protected function listParts_DELETEHandler(event:Event):void
+			{
+				combo.partList.splice(listParts.idx,1);
+				actor.zebra=zebra;
+			}
+			
+			private function updateList():void{
+				listParts.clear();
+				for each(var part:Zebra in combo.partList){
+					var shell:ZebraShell=new ZebraShell();
+					shell.zebra=part;
+					listParts.insert(shell);
+				}
+				listParts.idx=0;
+			}
+			
+			protected function btnReset_clickHandler(event:MouseEvent):void
+			{
+				onPut(0,0,0);
+			}
+			
+			protected function onPress(event:KeyboardEvent):void
+			{
+				switch(event.keyCode)
+				{
+					case Keyboard.LEFT:
+					{
+						onPut(currentPart.x-1,currentPart.y,currentPart.angle);
+						break;
+					}
+					case Keyboard.RIGHT:
+					{
+						onPut(currentPart.x+1,currentPart.y,currentPart.angle);
+						break;
+					}
+					case Keyboard.UP:
+					{
+						onPut(currentPart.x,currentPart.y-1,currentPart.angle);
+						break;
+					}
+					case Keyboard.DOWN:
+					{
+						onPut(currentPart.x,currentPart.y+1,currentPart.angle);
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<s:VGroup x="10" y="30" horizontalAlign="center" mouseDown="event.stopPropagation()"
+			  mouseUp="event.stopPropagation()">		
+		<s:HGroup width="150">
+			<file:FileButton6 id="fbZcombo" label="读取组合" _ext="*.zebra"
+							  READY="fbZcombo_READYHandler(event)"/>
+			<s:Button id="btnSave" label="保存组合" click="btnSave_clickHandler(event)"/>
+		</s:HGroup>
+		<list:ListEditor id="listParts" x="10" y="50" label="" ADD="listParts_ADDHandler(event)"
+					   DELETE="listParts_DELETEHandler(event)" nameable="false"/>
+		<s:VGroup enabled="{listParts.idx&gt;=0}">
+			<file:FileButton6 id="fbPart" label="读取零件" _ext="*.zebra"
+							  READY="fbPart_READYHandler(event)"/>
+			<s:Button id="btnReset" label="reset" click="btnReset_clickHandler(event)"/>
+		</s:VGroup>
+	</s:VGroup>
+	<s:Label y="10" color="0xffffff" horizontalCenter="0" text="斑马编辑器"/>
+</s:Group>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				currentState="display"
+				doubleClick="itemrenderer1_doubleClickHandler(event)" doubleClickEnabled="true"
+				focusOut="currentState='display'"
+				rightClick="itemrenderer1_rightClickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.Node;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var item:Node;
+			
+			override public function set data(value:Object):void{				
+				item=value as Node;
+//				if(item!=null)
+//					item.renderer=this;
+			}
+			
+			override public function get data():Object{
+				return item;
+			}
+			
+			public function _edit():void{				
+				currentState='edit';
+				
+				tiEdit.text = item.name;
+				tiEdit.selectRange(tiEdit.text.length,tiEdit.text.length+1);
+				tiEdit.setFocus();
+			}			
+			
+			protected function itemrenderer1_rightClickHandler(event:MouseEvent):void
+			{
+//				trace('right click on low: '+item.idxLocal);
+				var e:DrassEvent=new DrassEvent(DrassEvent.RightClick);
+				e.idxLocal=item.idxLocal;
+				dispatchEvent(e);
+			}
+			
+			protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void
+			{
+				trace('double click on low');
+			}
+			
+			protected function tiEdit_enterHandler(event:FlexEvent):void
+			{
+				if (item.name != tiEdit.text)
+				{
+					var e:DrassEvent=new DrassEvent(DrassEvent.Rename);
+					e.newName=tiEdit.text;
+					dispatchEvent(e);
+				}			
+				
+				currentState='display';
+			}
+			
+			protected function display_enterStateHandler(event:FlexEvent):void
+			{
+				dispatchEvent(new DrassEvent(DrassEvent.RenameComplete));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State enterState="display_enterStateHandler(event)" name="display"/>
+		<s:State name="edit"/>		
+		<s:State name="dragging"/>
+	</s:states>	
+
+	<s:Label id="lbDisplay" left="5" right="3" top="7" bottom="5" maxDisplayedLines="1"
+			 showTruncationTip="true" text="{item.id+':'+item.name}"/>	
+	<s:TextInput id="tiEdit" includeIn="edit" left="1" right="0" top="1" bottom="1" minWidth="25"
+				 enter="tiEdit_enterHandler(event)"/>
+	
+</s:ItemRenderer>

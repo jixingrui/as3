@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:mass="azura.banshee.mass.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:editor="azura.banshee.mass.editor.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)"
+		 color="0xffffff" creationComplete="group1_creationCompleteHandler(event)" fontSize="18">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_zui;
+			
+			import azura.banshee.engine.Statics;
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.mass.layer.DisplayerSdk2;
+			import azura.banshee.mass.model.MassBox;
+			import azura.banshee.mass.model.ScreenSetting;
+			import azura.banshee.mass.model.v3.MassTree3E;
+			import azura.banshee.mass.model.v3.MassTreeN3;
+			import azura.banshee.mass.sdk.MassCoderA4;
+			import azura.banshee.mass.service.ZuiEditNet;
+			import azura.banshee.zbox3.Zbox3;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.Fork;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.Gal4Pack;
+			import azura.helios.hard10.hub.HardItem;
+			
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Alert;
+			import spark.events.IndexChangeEvent;
+			
+			private var net_:ZuiEditNet;
+			
+			private var canvas:MassPanel3Canvas;
+			
+			public static var instance:MassPanel3;
+			
+			private var fork:Fork=new Fork(fReady,"layer","net");
+			
+			[Bindable]
+			private var isReceiver:Boolean;
+			
+			private var tree:MassTree3E;
+			
+			private function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				instance=this;	
+			}
+			
+			public function tellAction(data:ZintBuffer):void{
+				canvas.action.fromBytes(data);
+				ddlToAction.selectedIndex=canvas.action.toType;
+				lsMsg.string=canvas.action.stringMsg;
+				lnMsg.number=canvas.action.intMsg;
+				btnTarget.label=canvas.action.targetPath;
+			}
+			
+			private function group1_addedToStageHandler(event:Event):void
+			{
+				var config:Config_zui=new Config_zui();
+				config.onReady.add(onReady);
+				function onReady():void{
+					net_=new ZuiEditNet(config);
+					net_.onConnected.add(connected);
+					net_.connect();
+				}
+				
+				Statics.stage=stage;
+				
+				stage.addEventListener(KeyboardEvent.KEY_DOWN,onKeyDown);
+				StarlingAway.init(stage,holder,stage3DReady);
+			}
+			
+			private function stage3DReady():void{
+				StarlingAway.addStarlingLayer(starlingReady);
+			}			
+			
+			private function starlingReady(sl:StarlingLayer):void{
+				canvas=new MassPanel3Canvas();
+				canvas.init(stage,sl.root);
+				fork.ready("layer");
+			}
+			
+			private function connected():void{
+				fork.ready("net");
+			}
+			
+			private function fReady():void{
+				loadScreen();
+			}
+			
+			private function loadScreen():void{
+				//				trace("try load screen size",this);
+				ZuiEditNet.cs.getScreenSetting(ret_SS);
+				function ret_SS(ss:ScreenSetting):void{
+					//					trace("design size from remote",ss.designWidth,ss.designHeight,this);
+					resizeScreen(ss.designWidth,ss.designHeight);
+					tryInitHard();
+				}
+			}
+			
+			private var hdBoxInitialized:Boolean;
+			private function tryInitHard():void{
+				if(hdBoxInitialized)
+					return;
+				hdBoxInitialized=true;
+				ZuiEditNet.cs.hub.register(hdBox);
+			}
+			
+			public function resizeScreen(w:int,h:int):void{
+				screenPanel.w=w;
+				screenPanel.h=h;					
+				canvas.resize(w,h);
+				if(tree!=null){
+					tree.resize(w,h);
+					tree.showVisible();
+				}
+			}
+			
+			private function hdBox_SELECTHandler(event:Event):void
+			{
+				if(hdBox.selected_is_up_down){
+					tree.unselectBox();
+				}
+				updateBox();
+				isReceiver=boxPanel.massBox.isReceiver;
+				tree.selectBox(hdBox.selectedPath.toString());
+				tree.onUpdatePos.add(this.updatePos);
+				
+				var path:String="["+hdBox.selectedPath.toString()+"]";
+				Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT,path);
+			}
+			
+			private function hdBox_UNSELECTHandler(event:Event):void
+			{
+				tree.unselectBox();
+				isReceiver=false;
+			}
+			
+			private function updatePos(x:Number,y:Number):void{
+				if(boxPanel.massBox.x.int_percent==true)
+					boxPanel.massBox.x.value=x;
+				if(boxPanel.massBox.y.int_percent==true)
+					boxPanel.massBox.y.value=y;
+				//				boxPanel.updateVisual();
+				updateBox();
+				hdBox.save();
+			}
+			
+			private function onKeyDown(event:KeyboardEvent):void{
+				if(hdBox.selectedItem==null)
+					return;
+				
+				var target:MassBox=boxPanel.massBox;
+				if(!event.ctrlKey){
+					if(event.keyCode==Keyboard.UP){
+						target.y.value--;
+					}else if(event.keyCode==Keyboard.DOWN){
+						target.y.value++;
+					}else if(event.keyCode==Keyboard.LEFT){
+						target.x.value--;
+					}else if(event.keyCode==Keyboard.RIGHT){
+						target.x.value++;
+					}
+				}else{
+					if(event.keyCode==Keyboard.UP){
+						target.h.value++;
+					}else if(event.keyCode==Keyboard.DOWN){
+						target.h.value--;
+					}else if(event.keyCode==Keyboard.LEFT){
+						target.w.value--;
+					}else if(event.keyCode==Keyboard.RIGHT){
+						target.w.value++;
+					}
+				}
+				
+				updateBox();
+				boxPanel_changeHandler(null);
+			}
+			
+			private function updateBox():void{
+				boxPanel.updateVisual();
+				lnMsgR.number=boxPanel.massBox.from_device;
+				lsMsgR.string=boxPanel.massBox.from_mass;
+			}
+			
+			private function boxPanel_changeHandler(event:Event):void
+			{
+				hdBox.save();
+				isReceiver=boxPanel.massBox.isReceiver;
+				//				tree.checkShow();
+				tree.updateSelected(boxPanel.massBox);
+				//				massEditLayer.treeView.updateSelected(boxPanel.massBox);
+			}
+			
+			private function hdBox_RENAMEHandler(event:Event):void
+			{
+				hdBox.unselect();
+				clearAction();
+				makeTree();
+				//				massEditLayer.treeView.selectBox(hdBox.selectedPath);
+				//				massEditLayer.treeView.onUpdatePos.add(this.updatePos);
+			}
+			
+			private function hdBox_DATAARRIVEHandler(event:Event):void
+			{
+				makeTree();
+			}
+			
+			private function makeTree():void{
+				
+				if(tree!=null){
+					tree.dispose();
+				}
+				var check:Zbox3=canvas.uiLayer.zbox;
+				tree=new MassTree3E(canvas.uiLayer.zbox,new MassCoderA4(""));
+				//				tree.drawBorder=true;
+				
+				var currentNode:MassTreeN3=tree.root;
+				
+				for each(var up:HardItem in hdBox.up){
+					var box:MassBox=new MassBox();
+					box.fromBytes(up.data.clone());
+					
+					var next:MassTreeN3=currentNode.newChild();//new MassTreeN3(tree);
+					next.box=box;
+					next.name=up.name;
+					tree.path_MassTreeN3[next.path]=next;
+					
+					currentNode=next;
+				}
+				
+				for each(var down:HardItem in hdBox.down){					
+					try
+					{
+						box=new MassBox();
+						box.fromBytes(down.data.clone());
+						
+						next=currentNode.newChild();//new MassTreeN3(tree);
+						next.box=box;
+						next.name=down.name;
+						tree.path_MassTreeN3[next.path]=next;
+					} 
+					catch(error:Error) 
+					{
+						trace("Error: ============== data invalid",name);
+					}
+				}
+				//				tree.setScreenSize(massEditLayer.designWidth,massEditLayer.designHeight);
+				tree.root.resetState();
+				tree.root.adaptSize();
+				tree.showVisible();
+			}
+			
+			private function screenPanel_changeHandler(event:Event):void
+			{
+//				canvas.resize(screenPanel.w,screenPanel.h);
+				var ss:ScreenSetting=new ScreenSetting();
+				ss.designWidth=screenPanel.w;
+				ss.designHeight=screenPanel.h;
+				ZuiEditNet.cs.setScreenSetting(ss);
+				
+				resizeScreen(screenPanel.w,screenPanel.h);
+			}
+			
+			private function btnSave_clickHandler(event:MouseEvent):void
+			{
+				ZuiEditNet.cs.save(saveFile,canvas.uiLayer.zbox);
+			}
+			
+			private function saveFile(data:Gal4Pack):void{
+				var hint:String="把 全部";
+				if(hdBox.selectedItem!=null)
+					hint="把 "+hdBox.selectedPath.toString();
+				
+				var box:Alert=Alert.show("存成.mass文件", hint,  Alert.OK, null, closeHandler);
+				PopUpManager.centerPopUp(box);
+				function closeHandler( event:CloseEvent ):void
+				{							
+					if ( event.detail == Alert.OK )
+					{
+						var file:File=new File();
+						file.addEventListener(Event.SELECT,onSelect);
+						file.browseForSave("save .mass");
+						function onSelect(se:Event):void{
+							data.saveTo(file);
+						}
+					}
+				}
+			}
+			
+			private function fbRead_READYHandler(event:Event):void
+			{
+				var me5:String=new Gal4Pack().loadFrom(fbRead.file);
+				var treeData:ZintBuffer=Gal4.readSync(me5);
+				
+				ZuiEditNet.cs.load(treeData);
+			}
+			
+			private function btnClear_clickHandler(event:MouseEvent):void
+			{
+				ZuiEditNet.cs.wipe();
+				hdBox.clearSc(true);
+				hdBox.clearSc(false);
+				hdBox.clearAll();
+				clearAction();
+			}
+			
+			private function fbRef_READYHandler(event:Event):void
+			{
+				var me5:String=new Gal4Pack().loadFrom(fbRef.file);
+				canvas.ref.feedMe5(me5);
+			}
+			
+			private function btnClearRef_clickHandler(event:MouseEvent):void
+			{
+				canvas.ref.clear();
+			}
+			
+			private function ddlByAction_changeHandler(event:IndexChangeEvent):void
+			{
+				ddlToAction.selectedIndex=-1;
+				btnTarget.label="no target";
+				ZuiEditNet.cs.changeByAction(event.newIndex);
+			}
+			
+			private function ddlToAction_changeHandler(event:IndexChangeEvent):void
+			{
+				//				massEditLayer.action.toType=ddlToAction.selectedIndex;
+				//				saveAction();
+				ZuiEditNet.cs.changeToAction(event.newIndex);
+			}
+			
+			private function btnTarget_clickHandler(event:MouseEvent):void
+			{
+				ZuiEditNet.cs.setTarget();
+			}
+			
+			private function hdBox_HOLDHandler(event:Event):void
+			{
+				clearAction();
+			}
+			
+			private function clearAction():void{
+				ddlByAction.selectedIndex=-1;
+				btnTarget.label="no target";
+				ddlToAction.selectedIndex=-1;
+			}
+			
+			private function saveAction():void{
+				ZuiEditNet.cs.saveMsg(canvas.action);
+			}
+			
+			private function btnReportAction_clickHandler(event:MouseEvent):void
+			{
+				ZuiEditNet.cs.report(saveReport);
+			}
+			
+			private function saveReport(data:ByteArray):void{
+				var target:String=hdBox.selectedPath.toString();
+				var box:Alert=Alert.show(target, "save report",  Alert.OK, null, closeHandler);
+				PopUpManager.centerPopUp(box);
+				function closeHandler( event:CloseEvent ):void
+				{							
+					if ( event.detail == Alert.OK )
+					{
+						var f:FileReference=new FileReference;
+						f.save(data,"report.txt");
+					}
+				}
+			}
+			
+			private function hdBox_DELETEHandler(event:Event):void
+			{
+				clearAction();
+			}
+			
+			private function hdBox_DROPHandler(event:Event):void
+			{
+				clearAction();
+			}
+			
+			private function lsMsg_changeHandler(event:Event):void
+			{
+				canvas.action.stringMsg=lsMsg.string;
+				saveAction();
+			}
+			
+			private function lnMsg_changeHandler(event:Event):void
+			{
+				canvas.action.intMsg=lnMsg.number;
+				saveAction();
+			}
+			
+			private function lsMsgR_changeHandler(event:Event):void
+			{
+				boxPanel.massBox.from_mass=lsMsgR.string;				
+				hdBox.save();
+			}
+			
+			private function lnMsgR_changeHandler(event:Event):void
+			{
+				boxPanel.massBox.from_device=lnMsgR.number;				
+				hdBox.save();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder" horizontalCenter="0" verticalCenter="0"/>
+	<s:VGroup width="190" height="100%" gap="0" horizontalAlign="center"
+			  mouseDown="event.stopImmediatePropagation()"
+			  mouseMove="event.stopImmediatePropagation()"
+			  mouseUp="event.stopImmediatePropagation()">
+		<ui:Hard10UI id="hdBox" width="100%" height="100%" color="0"
+					 DATAARRIVE="hdBox_DATAARRIVEHandler(event)" DELETE="hdBox_DELETEHandler(event)"
+					 DROP="hdBox_DROPHandler(event)" HOLD="hdBox_HOLDHandler(event)"
+					 reader="{boxPanel.massBox}" RENAME="hdBox_RENAMEHandler(event)"
+					 SELECT="hdBox_SELECTHandler(event)" title="原子"
+					 UNSELECT="hdBox_UNSELECTHandler(event)"/>
+		<s:VGroup id="gpAction" width="100%" gap="0">			
+			<s:DropDownList id="ddlByAction" visible="{hdBox.heldItem!=null}" width="100%"
+							change="ddlByAction_changeHandler(event)" color="0">		
+				<s:layout>
+					<s:VerticalLayout requestedMaxRowCount="15"/>
+				</s:layout>
+				<s:dataProvider>
+					<s:ArrayCollection id="byType">
+						<fx:String>by hover</fx:String>
+						<fx:String>by out</fx:String>
+						<fx:String>by single</fx:String>
+						<fx:String>by double</fx:String>
+						<fx:String>by activate</fx:String>
+						<fx:String>by spank</fx:String>
+					</s:ArrayCollection>
+				</s:dataProvider>
+			</s:DropDownList>
+			<s:DropDownList id="ddlToAction" visible="{ddlByAction.selectedIndex&gt;=0}" width="100%"
+							change="ddlToAction_changeHandler(event)" color="0" selectedIndex="-1">		
+				<s:layout>
+					<s:VerticalLayout requestedMaxRowCount="15"/>
+				</s:layout>
+				<s:dataProvider>
+					<s:ArrayCollection id="toType">
+						<fx:String>do slap</fx:String>
+						<fx:String>do spank</fx:String>
+						<fx:String>do reset</fx:String>
+						<fx:String>to coder</fx:String>
+						<fx:String>to mass</fx:String>
+						<fx:String>to device</fx:String>
+					</s:ArrayCollection>
+				</s:dataProvider>
+			</s:DropDownList>
+			<s:Button id="btnTarget"
+					  visible="{ddlToAction.selectedIndex&gt;=0 &amp;&amp; ddlToAction.selectedIndex&lt;=3}"
+					  width="100%" label="target" click="btnTarget_clickHandler(event)" color="0"/>
+		</s:VGroup>
+		<s:HGroup left="0" width="100%" gap="0">
+			<s:Button id="btnSave" width="40" label="存" click="btnSave_clickHandler(event)" color="0"/>
+			<file:FileButton6 id="fbRead" width="40" label="读" _ext="*.mass" color="0"
+							  READY="fbRead_READYHandler(event)"/>
+			<s:Button id="btnClear"
+					  visible="{hdBox.selectedItem==null &amp;&amp; hdBox.upEmpty==true}" width="40"
+					  label="清" click="btnClear_clickHandler(event)" color="0"/>
+		</s:HGroup>
+	</s:VGroup>
+	<s:HGroup visible="{ddlToAction.selectedIndex&gt;=3} " left="200" right="0" bottom="45">
+		<label:LabelNumber2 id="lnMsg" visible="{ddlToAction.selectedIndex==5}" width="120"
+							height="100%" label="c表" change="lnMsg_changeHandler(event)"/>
+		<label:LabelString2 id="lsMsg" width="100%" height="100%" label="发消息"
+							change="lsMsg_changeHandler(event)"/>
+	</s:HGroup>
+	<s:HGroup visible="{isReceiver}" left="200" right="0" bottom="0">
+		<label:LabelNumber2 id="lnMsgR" width="120" height="100%" label="s表"
+							change="lnMsgR_changeHandler(event)"/>
+		<label:LabelString2 id="lsMsgR" width="100%" height="100%" label="收消息"
+							change="lsMsgR_changeHandler(event)"/>
+	</s:HGroup>
+	<editor:BoxPanel id="boxPanel" visible="{hdBox.selectedItem!=null}" right="0"
+					 change="boxPanel_changeHandler(event)" verticalCenter="0"/>
+	<s:HGroup bottom="20" horizontalAlign="center" horizontalCenter="140" verticalAlign="middle">
+		<editor:ScreenPanel id="screenPanel" change="screenPanel_changeHandler(event)"/>
+		<file:FileButton6 id="fbRef" label="上参考" _ext="*.zebra" color="0"
+						  READY="fbRef_READYHandler(event)"/>
+		<s:Button id="btnClearRef" label="清参考" click="btnClearRef_clickHandler(event)" color="0"/>
+		<s:Button id="btnReportAction" label="报告" click="btnReportAction_clickHandler(event)"
+				  color="0"/>
+	</s:HGroup>
+</s:Group>

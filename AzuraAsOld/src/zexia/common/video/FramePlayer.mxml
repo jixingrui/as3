@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:util="lift.util.*"
+		 xmlns:m1="lift.m1.*"
+		 xmlns:sb="lift.util.sb.*"
+		 xmlns:shine="azura.common.ui.shine.*"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			
+			private var video:Video;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				video=new Video();
+				video.smoothing=true;
+				video.x=0;
+				video.y=0;
+				video.width=this.width;
+				video.height=this.height;
+				holder.addChild(video);				
+			}
+			
+			public function playUrl(url:String):void{
+				nc=new NetConnection();
+				nc.connect(null);
+				
+				ns=new NetStream(nc);
+				ns.addEventListener(NetStatusEvent.NET_STATUS,onNetStatusNS);
+				ns.client=this;
+				
+				video.attachNetStream(ns);
+				
+				ns.play(url);
+			}
+			
+			private function onNetStatusNS(nse:NetStatusEvent):void{
+				if (nse.info.code == "NetStream.Buffer.Empty") {
+					ns.seek(0);
+				}
+			}
+			
+			public function close():void{
+				if(video!=null)
+					video.attachNetStream(null);
+				if(ns!=null)
+					ns.close();
+				dispatchEvent(new Event("FINISH"));
+			}
+			
+			public function pause():void{
+				ns.pause();
+			}
+			
+			public function resume():void{
+				if(ns!=null)
+					ns.resume();
+			}
+			
+			public function onPlayStatus(info:Object):void{
+			}
+			
+			public function onMetaData(info:Object):void{
+			}
+			
+			public function onXMPData(info:Object):void{
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="FINISH", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:SpriteVisualElement id="holder"/>
+</s:Group>

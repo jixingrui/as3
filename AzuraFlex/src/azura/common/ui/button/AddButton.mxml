@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  creationComplete="hgroup1_creationCompleteHandler(event)" gap="0" horizontalAlign="center"
+		  verticalAlign="middle">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var _selected:Object;
+			
+			[Bindable]
+			private var itemName:String;
+			
+			public function get selected():Object
+			{
+				return _selected;
+			}
+			
+			public function feed(item:Object,name:String):void{
+				if(name==null||name.length==0)
+					name="Error:no name";
+				if(item==null)
+					name="Error:null";
+				_selected=item;
+				itemName=name;
+			}
+			
+			public function unselect():void{
+				tbItem.selected=false;
+			}
+			
+			public function clear():void{
+				_selected=null;
+				itemName=null;
+			}
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("ADD"));
+			}
+			
+			protected function hgroup1_mouseOverHandler(event:MouseEvent):void
+			{
+				trace("mouse over",this);
+				tbItem.toolTip=this.toolTip;
+			}
+			
+			protected function hgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				styleManager.getStyleDeclaration("mx.controls.ToolTip").setStyle("fontSize","18");
+			}
+			
+			protected function tbItem_changeHandler(event:Event):void
+			{
+				if(tbItem.selected){
+					dispatchEvent(new Event("SELECT"));
+				}else{
+					dispatchEvent(new Event("UNSELECT"));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>	
+	<fx:Metadata>
+		[Event(name="ADD", type="flash.events.Event")]
+		[Event(name="SELECT", type="flash.events.Event")]
+		[Event(name="UNSELECT", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Button id="btnAdd" width="25" height="25" label="+" click="btnAdd_clickHandler(event)"
+			  fontSize="18" skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+	<s:ToggleButton id="tbItem" width="100%" height="25" label="{itemName}"
+					change="tbItem_changeHandler(event)" enabled="{_selected!=null}" fontSize="18"
+					skinClass="azura.common.ui.skin.FlatToggleButtonSkin"/>
+</s:HGroup>

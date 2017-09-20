@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="130" height="100%" currentState="browse" enabled="false"
+				   mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()" xmlns:ui="azura.helios.drass9.ui.*">
+	<s:states>
+		<s:State name="browse"/>
+		<s:State enterState="tiInput.setFocus()" name="add"/>
+		<s:State enterState="tiInput.setFocus()" name="search"/>
+	</s:states>
+	<fx:Script>
+		<![CDATA[			
+			import azura.common.collections.ZintBuffer;
+			import azura.common.ui.list.ListItemI;
+			import azura.helios.drass9.DrassClient;
+			import azura.helios.drass9.DrassHub;
+			import azura.helios.drass9.DrassNode;
+			import azura.helios.drass9.e.DrassEvent;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			
+			import org.osflash.signals.Signal;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var _id_:int;
+			public var _hub:DrassHub;
+			
+			private var filter:String;
+			
+			private var _cs:DrassClient;
+			
+			[Bindable]
+			public var title:String;
+			
+			[Bindable]
+			public var selected:DrassNode;
+			
+			[Bindable]
+			public var reader:ListItemI;
+			
+			private var _onSelect:Signal=new Signal();
+			
+			public function get onSelect():Signal
+			{
+				return _onSelect;
+			}
+			
+			[Bindable]
+			public function get cs():DrassClient
+			{
+				return _cs;
+			}
+			
+			public function set cs(value:DrassClient):void
+			{
+				_cs = value;
+				checkPgSize();
+			}
+			
+			public function get _id():int{
+				return _id_;
+			}
+			public function set _id(value:int):void{
+				this._id_=value;
+			}
+			
+			public function fillDown():void{
+				
+				unselect();
+				
+				var ll:ArrayCollection=new ArrayCollection();
+				for each(var reader:DrassNode in cs.downList){
+					ll.addItem(reader);
+				}
+				listDown.dataProvider=ll;
+				
+				dispatchEvent(new Event("PAGELOADED"));
+			}
+			
+			public function get list():Vector.<ZintBuffer>{
+				var result:Vector.<ZintBuffer>=new Vector.<ZintBuffer>();
+				for each(var dn:DrassNode in listDown.dataProvider){
+					var data:ZintBuffer=dn.data.clone();
+					result.push(data);
+				}
+				return result;
+			}
+			
+			public function fillUp():void{
+				
+				unselect();
+				
+				var ll:ArrayCollection=new ArrayCollection();
+				for each(var reader:DrassNode in cs.upList){
+					ll.addItem(reader);
+				}
+				listUp.dataProvider=ll;
+			}	
+			
+			public function clear():void{
+				listUp.dataProvider=null;
+				listDown.dataProvider=null;
+			}
+			
+			public function save():void{
+				selected.node.data=reader.toBytes();
+				cs.save(selected.data);
+				selected.node.data.position=0;
+			}
+			
+			public function unselect():void{
+				if(selected==null)
+					return;
+				
+				selected=null;
+				listUp.selectedItem=null;
+				listDown.selectedItem=null;
+				if(reader!=null){
+					reader.clear();
+				}
+				dispatchEvent(new Event("UNSELECT"));
+				//				onSelect.dispatch(false);
+			}
+			
+			protected function btnPgDn_clickHandler(event:MouseEvent):void
+			{
+				cs.pgDown();
+			}
+			
+			protected function btnPgUp_clickHandler(event:MouseEvent):void
+			{
+				cs.pgUp();
+			}
+			
+			protected function btnDelete_clickHandler(event:MouseEvent):void
+			{				
+				cs.delete_();
+			}
+			
+			protected function btnRename_clickHandler(event:MouseEvent):void
+			{
+				var lr:EditableRenderer=listDown.dataGroup.getElementAt(listDown.selectedIndex) as EditableRenderer;
+				lr.edit();
+			}
+			
+			protected function btnSearch_clickHandler(event:MouseEvent):void
+			{
+				this.currentState='search';
+				tiInput.text=filter;
+			}
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				switch(currentState)
+				{
+					case 'add':
+					{
+						this.currentState='browse';
+						break;
+					}
+					case 'browse':
+					{
+						this.currentState='add';
+						tiInput.text='';
+						//						tiInput.enabled=true;
+						//						stage.focus=tiInput;
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}	
+			}
+			
+			protected function listDown__RenameHandler(event:DrassEvent):void
+			{
+				cs.rename(event.newName);
+			}
+			
+			//			private function readerFill():void{
+			//				if(reader!=null){
+			//					if(selected==null){
+			//						reader.clear();
+			//					}else{
+			//						reader.fromBytes(selected.data);
+			//					}
+			//				}else{
+			//					//					trace("DrassUI: reader is null");
+			//				}
+			//			}
+			
+			protected function ti_enterHandler(event:FlexEvent):void
+			{
+				switch(currentState)
+				{
+					case 'add':
+					{
+						if(tiInput.text!=''){
+							cs.add(tiInput.text);
+							filter='';
+							currentState='browse';
+						}
+						break;
+					}
+					case 'search':
+					{
+						filter=tiInput.text;
+						cs.search(filter);
+						currentState='browse';
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}				
+			}
+			
+			protected function btnCache_clickHandler(event:MouseEvent):void
+			{
+				btnGrab.label=selected.name;
+				cs.capture();
+			}
+			
+			protected function listDown_resizeHandler(event:ResizeEvent):void
+			{
+				checkPgSize();
+			}
+			
+			private function checkPgSize():void{
+				//				trace(listDown.height);
+				if(cs!=null && listDown.height>0){
+					cs.pgSize(Math.floor(listDown.height/30));
+				}
+			}
+			
+			protected function btnDrop_clickHandler(event:MouseEvent):void
+			{
+				btnGrab.label='';
+				cs.drop();
+			}
+			
+			protected function listUp_changeHandler(event:IndexChangeEvent):void
+			{
+				listDown.selectedItem=null;
+				selected=listUp.selectedItem;
+				readerFill();
+				cs.selectUp(event.newIndex);
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			protected function listDown_changeHandler(event:IndexChangeEvent):void
+			{
+				listUp.selectedItem=null;
+				selected=listDown.selectedItem;
+				readerFill();
+				cs.selectDown(event.newIndex);
+				dispatchEvent(new Event("SELECT"));
+			}
+			
+			private function readerFill():void{
+				if(reader!=null){
+					if(selected==null){
+						reader.clear();
+					}else{
+						reader.fromBytes(selected.data);
+						onSelect.dispatch();
+					}
+				}else{
+					//					trace("DrassUI: reader is null");
+				}
+			}
+			
+			protected function lbHead_clickHandler(event:MouseEvent):void
+			{
+				unselect();
+				cs.unselect();				
+			}
+			
+			protected function listDown__JumpHandler(event:DrassEvent):void
+			{
+				if(event.item.numChildren>0){
+//					selected=event.item;
+					cs.selectDown(listDown.dataProvider.getItemIndex(event.item));
+					cs.jumpUp();
+				}
+			}
+			
+			protected function listUp__JumpHandler(event:DrassEvent):void
+			{
+				cs.jumpDown();
+			}
+			
+		]]>
+	</fx:Script>	
+	<fx:Metadata>
+		[Event(name="PAGELOADED", type="flash.events.Event")]
+		[Event(name="SELECT", type="flash.events.Event")]
+		[Event(name="UNSELECT", type="flash.events.Event")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup id="vgDrass" width="100%" height="100%" gap="0" rightClick=";">
+		<s:Group width="100%" height="20">
+			<s:Label id="lbHead" width="100%" height="100%" click="lbHead_clickHandler(event)"
+					 fontSize="16" text="{title}" verticalCenter="0"/>
+		</s:Group>
+		<ui:DrassList id="listUp" width="100%" _Jump="listUp__JumpHandler(event)"
+					  change="listUp_changeHandler(event)" rollOverColor="#969696"
+					  selectionColor="#969696"
+					  enabled.add="false"
+					  enabled.search="false"/>
+		<s:HGroup width="100%" gap="0">
+			<s:Button id="btnAdd" width="25" click="btnAdd_clickHandler(event)"
+					  icon="@Embed('assets/drass/cross.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  chromeColor.add="#FF0000" enabled.add="true"
+					  enabled.browse="true"
+					  enabled.search="false"/>
+			<s:Button id="btnPgUp" width="100%" click="btnPgUp_clickHandler(event)"
+					  icon="@Embed('assets/drass/arrow_up_left.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  enabled.add="false"
+					  enabled.browse="{cs.hasPrev}"
+					  enabled.search="false"/>
+			<s:Button id="btnSearch" width="25" icon="@Embed('assets/drass/magnifier.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  enabled.add="false"
+					  click.browse="btnSearch_clickHandler(event)"
+					  chromeColor.search="#FF0000" click.search="this.currentState='browse'"/>
+		</s:HGroup>
+		<s:TextInput id="tiInput" includeIn="search,add" width="100%" enter="ti_enterHandler(event)"
+					 mouseChildren="false"/>
+		<ui:DrassList id="listDown" width="100%" height="100%" _Jump="listDown__JumpHandler(event)"
+					  _Rename="listDown__RenameHandler(event)"
+					  change="listDown_changeHandler(event)" resize="listDown_resizeHandler(event)"
+					  rollOverColor="#969696" selectionColor="#969696"
+					  enabled.add="false"
+					  enabled.browse="true"
+					  enabled.search="false"/>
+		<s:HGroup width="100%" gap="0">
+			<s:Button id="btnDelete" width="25" click="btnDelete_clickHandler(event)"
+					  icon="@Embed('assets/drass/trashcan.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  enabled.add="false"
+					  enabled.browse="{listDown.selectedItem!=null}"
+					  enabled.search="false"/>
+			<s:Button id="btnPgDn" width="100%" click="btnPgDn_clickHandler(event)"
+					  icon="@Embed('assets/drass/arrow_down_right.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  enabled.add="false"
+					  enabled.browse="{cs.hasNext}"
+					  enabled.search="false"/>
+			<s:Button id="btnRename" width="25" click="btnRename_clickHandler(event)"
+					  icon="@Embed('assets/drass/wrench.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"
+					  enabled.add="false"
+					  enabled.browse="{listDown.selectedItem!=null}"
+					  enabled.search="false"/>
+		</s:HGroup>		
+		<s:HGroup includeIn="browse" width="100%" gap="0">
+			<s:Button id="btnGrab" width="100%" height="100%" click="btnCache_clickHandler(event)"
+					  enabled="{listDown.selectedItem!=null || listUp.selectedItem!=null}"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+			<s:Button id="btnDrop" width="25" click="btnDrop_clickHandler(event)"
+					  enabled="{btnGrab.label!=''}" icon="@Embed('assets/drass/drop.png')"
+					  skinClass="azura.common.ui.skin.FlatButtonSkin"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:BorderContainer>

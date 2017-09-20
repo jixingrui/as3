@@ -1,0 +1,11 @@
+﻿<root>
+	<maze4>
+		<host>localhost</host>
+		<port>7367</port>
+	</maze4>
+	<mc5>
+		<s>http://succubus1/mc5s</s>
+		<m>http://succubus1/mc5m</m>
+		<l>http://succubus1/mc5l</l>
+	</mc5>
+</root>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_Maze2Player;
+			
+			import azura.avalon.maze.canvas.player.LayerMazePlayer;
+			import azura.avalon.maze.data.Door;
+			import azura.avalon.maze.data.EventCenter;
+			import azura.avalon.maze.data.MazeOld;
+			import azura.banshee.engine.Stage3DRoot;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.g2d.LoaderInitializer;
+			import azura.common.algorithm.FoldIndex;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.loaders.FileLoader;
+			import azura.gallerid3.source.GsFile;
+			
+			[Bindable]
+			public var canvas:LayerMazePlayer;
+			private var entrance:String;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				LoaderInitializer.singleton();
+				
+				EventCenter.enterDoor_String.add(enterDoor);
+				function enterDoor(uid:String):void{
+					var door:Door=canvas.maze.getDoor(uid);
+					EventCenter.enterDoor_Door.dispatch(door);
+				}
+				Stage3DRoot.singleton().init(stage,holder,onInit);
+				function onInit():void{
+					canvas=new LayerMazePlayer(G2dEngine.singleton().singleLayer);
+				}
+				
+				var config:Config_Maze2Player=new Config_Maze2Player("assets/config_station.xml");
+				config.onReady.add(onReady);
+				function onReady():void{
+					var packFile:File=File.applicationDirectory.resolvePath(config.pack);
+					new GsFile(packFile);
+					
+					FileLoader.load(config.maze,onMazeReady);
+					entrance=config.entrance;
+				}
+				function onMazeReady(ba:ByteArray):void{
+					canvas.maze=new MazeOld();
+					canvas.maze.fromBytes(new ZintBuffer(ba));
+					trace("room count="+canvas.maze.roomList.length);
+					
+					EventCenter.enterDoor_String.dispatch(entrance);
+				}
+			}
+			
+			protected function btnStart_clickHandler(event:MouseEvent):void
+			{
+				canvas.mouseMode=LayerMazePlayer.MOUSEPATH;
+				canvas.clearPoints();
+			}
+			
+			protected function btnEnd_clickHandler(event:MouseEvent):void
+			{
+				canvas.mouseMode=LayerMazePlayer.MOUSEPATH;
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=1.2;
+				snap();
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=0.8;
+				snap();
+			}
+			
+			private function snap():void{
+				if(Math.abs(canvas.root.root.scaleLocal-1)<0.1)
+					canvas.root.root.scaleLocal=1;
+				
+				var z:int=Math.max(canvas.zforestNode.zforest.mask.zMax,canvas.zforestNode.zforest.base.zMax,2);
+				var min:Number=1/FoldIndex.sideLength(z-2);
+				var max:Number=1.5;
+				if(canvas.root.root.scaleLocal<min)
+					canvas.root.root.scaleLocal=min;
+				if(canvas.root.root.scaleLocal>max)
+					canvas.root.root.scaleLocal=max;
+			}
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+	<s:HGroup top="10" horizontalCenter="0">
+		<s:Button id="btnStart" label="起点" click="btnStart_clickHandler(event)"/>
+		<s:Button id="btnEnd" label="终点" click="btnEnd_clickHandler(event)"/>
+	</s:HGroup>
+</s:Group>

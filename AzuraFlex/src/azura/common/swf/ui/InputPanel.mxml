@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="panel1_creationCompleteHandler(event)" fontSize="28"
+		 mouseDown="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		 title="请输入">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.swf.SwfEvent;
+			
+			import mx.events.FlexEvent;
+			
+			protected function btnCancel_mouseDownHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				var ie:SwfEvent=new SwfEvent(SwfEvent.ANSWER_INPUT);
+				dispatchEvent(ie);
+			}
+			
+			protected function btnOk_mouseDownHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				send();
+			}
+			
+			protected function ti_textInputHandler(event:TextEvent):void
+			{
+				event.preventDefault();	
+				event.stopImmediatePropagation();
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				stage.focus=ti;
+			}
+			
+			private function send():void{
+				var input:String=ti.text;
+				if(ti.text.length==0)
+					return;
+				
+				var ie:SwfEvent=new SwfEvent(SwfEvent.ANSWER_INPUT);
+				ie.string=input;
+				dispatchEvent(ie);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup bottom="10" width="100%" height="100%">
+		<s:TextInput id="ti" width="100%" enter="send()" mouseDown="event.stopImmediatePropagation()"
+					 mouseUp="event.stopImmediatePropagation()" 
+					 textInput="ti_textInputHandler(event)"/>
+		<s:HGroup width="100%" gap="20" horizontalAlign="center" verticalAlign="contentJustify">
+			<s:Button id="btnOk" label="确定" fontSize="32" mouseDown="btnOk_mouseDownHandler(event)"
+					  skinClass="azura.common.ui.alert.ButtonSkin"/>
+			<s:Button id="btnCancel" label="取消" fontSize="32"
+					  mouseDown="btnCancel_mouseDownHandler(event)" skinClass="azura.common.ui.alert.ButtonSkin"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:Panel>

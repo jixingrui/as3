@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.source.GsFile;
+			import azura.gallerid4.Gal4;
+			
+			private var canvas:LayerZpanoPure2;
+			private var pack:GsFile;
+			
+			private var ec:EditorCanvas3;
+			
+			public function activate(ec:EditorCanvas3):void{
+				this.ec=ec;
+				canvas=new LayerZpanoPure2(ec.away);
+				ec.ruler.zbox.visible=false;
+				ec.space.addGesture(canvas);
+			}
+			
+			public function deactivate():void{
+				ec.ruler.zbox.visible=true;
+				canvas.dispose();
+				ec.space.removeGesture(canvas);
+			}
+			
+			protected function fbZpano_READYHandler(event:Event):void
+			{
+				var master:String=new Gal4Pack().loadFrom(fbZpano.file);				
+				var data:ZintBuffer=Gal4.readSync(master);
+				
+				canvas.load(data);
+				canvas.tiltSpeed=1;
+			}
+		]]>
+	</fx:Script>
+	
+	<file:FileButton6 id="fbZpano" x="10" y="50" label="load .zpano" _ext="*.zpano"
+					  READY="fbZpano_READYHandler(event)"/>
+</s:Group>

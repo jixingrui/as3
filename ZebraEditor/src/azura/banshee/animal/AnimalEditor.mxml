@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:file="azura.common.ui.file.*"
+		  xmlns:label="azura.common.ui.label.*"
+		  xmlns:list="azura.common.ui.list.*"
+		  width="100%" horizontalAlign="center">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox3.editor.animal.ZebraShell4;
+			import azura.common.algorithm.FastMath;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			
+			[Bindable]
+			public var label:String="";
+			
+			[Bindable]
+			public var animal:Zanimal4=new Zanimal4();
+			
+			[Bindable]
+			public var raceName:String;
+			
+			public var currentData:ZintBuffer;
+			
+			[Bindable]
+			public var isSealed:Boolean;
+			
+			protected function lsRaceName_changeHandler(event:Event):void
+			{
+				animal.race.name=lsRaceName.string;
+				raceName=lsRaceName.string;
+			}
+			
+			protected function btnSeal_clickHandler(event:MouseEvent):void
+			{
+				if(animal.race.isReady){
+					animal.seal();
+					isSealed=true;
+				}
+			}
+			
+			public function write(gp:GalPack5):void{
+				animal.shapeList[listPose.idx]=gp;
+				if(gp!=null){
+					currentData=Gal4.readSync(gp.master);
+					dispatchEvent(new Event("READ"));
+				}else{
+					dispatchEvent(new Event("CLEAR"));
+				}
+			}
+			
+			protected function listPose_MOVEHandler(event:Event):void
+			{
+				if(!animal.race.sealed)
+					return;
+				
+				var gp:GalPack5=animal.shapeList[listPose.idx];
+				currentData=Gal4.readSync(gp.master);
+				if(currentData==null){
+					dispatchEvent(new Event("CLEAR"));
+					return;
+				}else{
+					dispatchEvent(new Event("READ"));
+				}
+			}
+			
+			protected function listPose_ADDHandler(event:Event):void
+			{
+				var s:ZebraShell4=new ZebraShell4();
+				s.name=FastMath.random(1,999)+"";
+				animal.race.poseList.splice(listPose.idx+1,0,s.name);
+				listPose.insert(s);
+			}
+			
+			protected function listPose_DELETEHandler(event:Event):void
+			{
+				animal.race.poseList.splice(listPose.idx,1);
+			}
+			
+			protected function fbAnimal_READYHandler(event:Event):void
+			{
+				isSealed=true;
+				var gp:GalPack5=new GalPack5().fromPack(fbAnimal.file);
+				
+				animal.fromPack(gp);
+				raceName=animal.race.name;
+				
+				listPose.clear();
+				for (var i:int =0;i<animal.race.poseList.length;i++){
+					var dc:String=animal.race.poseList[i];
+					var shell:ZebraShell4=new ZebraShell4();
+					shell.name=dc;
+					
+					listPose.insert(shell);
+				}
+				
+				listPose.idx=0;
+			}
+			
+			protected function fbClear_clickHandler(event:MouseEvent):void
+			{
+				animal.clear();
+				raceName="";
+				listPose.clear();
+				dispatchEvent(new Event("CLEAR"));
+			}
+			
+			protected function listPose_RENAMEHandler(event:Event):void
+			{
+				animal.race.poseList[listPose.idx]=listPose.current.name;
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				animal.toPack().toPackFN(animal.name+"."+animal.race.name+".animal");
+			}
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="READ", type="flash.events.Event")]
+		[Event(name="CLEAR", type="flash.events.Event")]
+	</fx:Metadata>
+	<label:LabelString2 id="lsRaceName" label="{label}集=" change="lsRaceName_changeHandler(event)"
+						color="0xffffff" enabled="{!animal.race.sealed}" string="{raceName}"/>
+	<list:ListEditor id="listPose" label="状态=" ADD="listPose_ADDHandler(event)"
+					 DELETE="listPose_DELETEHandler(event)" editable="{!animal.race.sealed}"
+					 MOVE="listPose_MOVEHandler(event)" RENAME="listPose_RENAMEHandler(event)">
+	</list:ListEditor>
+	<s:HGroup>
+		<s:Button id="fbClear" label="清空" click="fbClear_clickHandler(event)"/>
+		<file:FileButton6 id="fbAnimal" label="读取" _ext="*.animal"
+						  READY="fbAnimal_READYHandler(event)"/> 
+	</s:HGroup>
+	<s:HGroup>
+		<s:Button id="btnSeal" label="封" click="btnSeal_clickHandler(event)"
+				  enabled="{!animal.race.sealed}"/>
+		<s:Button id="btnSave" label="保存" click="btnSave_clickHandler(event)"/>
+	</s:HGroup>
+</s:VGroup>

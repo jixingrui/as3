@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.layers.LayerZimageDrag;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.source.GsFile;
+			
+			private var canvas:LayerZimageDrag;
+
+			private var pack:GsFile;
+			
+			public function set active(value:Boolean):void{
+				if(value){
+					canvas=new LayerZimageDrag(G2dEngine.singleton().singleLayer);
+				}else{
+					canvas.dispose();
+				}
+			}
+			
+			protected function fbZimage_READYHandler(event:Event):void
+			{
+				if(canvas.active){
+					this.active=false;
+					this.active=true;
+				}
+				pack=new GsFile(fbZimage.file);
+//				Gallerid.singleton().addPack(pack);
+				canvas.mc5Scene=pack.master;
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=1.1;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=0.9;
+			}
+		]]>
+	</fx:Script>
+	
+	<file:FileButton6 id="fbZimage" x="0" y="10" label="load .zebra" _ext="*.zebra"
+					  READY="fbZimage_READYHandler(event)"/>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,4 @@
+Mp3Worker.swf: no encryption
+ShoujiguangFlex.swf: no encryption;no a;
+SjgWin.swf: no encryption;no random text;azura&com only;
+SjgAnd.swf: no encryption;no random text;azura&com only;

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  currentState="Show">
+	<fx:Script>
+		<![CDATA[			
+			import mx.events.FlexEvent;
+			
+			import spark.events.TextOperationEvent;
+			
+			[Bindable]
+			public var label:String="LabelString";
+			
+			[Bindable]
+			public var string:String='';
+			
+			protected function tiString_enterHandler(event:FlexEvent):void
+			{
+				currentState="Show";
+				dispatchEvent(new Event("CHANGE"));
+			}
+			
+			protected function tiString_focusOutHandler(event:FocusEvent):void
+			{
+				currentState="Show";
+			}
+			
+			protected function lb_clickHandler(event:MouseEvent):void
+			{
+				currentState="Edit";
+			}
+			
+			protected function state1_enterStateHandler(event:FlexEvent):void
+			{
+				callLater(tiString.setFocus);
+			}
+			
+			protected function tiString_changeHandler(event:TextOperationEvent):void
+			{
+				string=tiString.text;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="Show"/>
+		<s:State enterState="state1_enterStateHandler(event)" name="Edit"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, _text objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="CHANGE", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Label id="lb" click="lb_clickHandler(event)" text="{label} = {string}" verticalCenter="0"/>
+	<s:TextInput id="tiString" visible="false" width="0" change="tiString_changeHandler(event)"
+				 click="event.stopImmediatePropagation()" contentBackgroundAlpha="0.0"
+				 contentBackgroundColor="#FFFFFF" enter="tiString_enterHandler(event)"
+				 focusOut="tiString_focusOutHandler(event)" text="{string}" textAlign="right"
+				 verticalCenter="0"/>
+</s:HGroup>

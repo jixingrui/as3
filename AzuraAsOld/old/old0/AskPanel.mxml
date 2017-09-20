@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 minWidth="170" minHeight="100" creationComplete="panel1_creationCompleteHandler(event)"
+		 mouseDown="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		 title="{header}">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Alert;
+			
+			[Bindable]
+			protected var header:String;
+			[Bindable]
+			protected var text:String;
+			[Bindable]
+			protected var listener:Function;
+			
+			public static function show(text:String,header:String,listner_CloseEvent:Function,parent:DisplayObject=null):void{
+				var yp:AskPanel=new AskPanel();
+				yp.text=text;
+				yp.header=header;
+				yp.listener=listner_CloseEvent;
+				
+				if(parent==null)
+					parent=FlexGlobals.topLevelApplication as DisplayObject;
+				
+				yp.maxWidth=Math.max(yp.minWidth,parent.width*2/3);
+				yp.maxHeight=parent.height;
+				
+				PopUpManager.addPopUp(yp,parent,false);
+				PopUpManager.centerPopUp(yp);
+			}
+			
+			protected function btnYes_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				var ce:CloseEvent=new CloseEvent(CloseEvent.CLOSE);
+				ce.detail=Alert.YES;
+				dispatchEvent(ce);
+				removeEventListener(CloseEvent.CLOSE,listener);
+			}
+			
+			protected function btnNo_clickHandler(event:MouseEvent):void
+			{
+				PopUpManager.removePopUp(this);
+				var ce:CloseEvent=new CloseEvent(CloseEvent.CLOSE);
+				ce.detail=Alert.NO;
+				dispatchEvent(ce);
+				removeEventListener(CloseEvent.CLOSE,listener);
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				label.width=label.measuredWidth;
+				label.height=label.measuredHeight;
+				
+				addEventListener(CloseEvent.CLOSE,listener);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label id="label" left="10" right="10" top="10" bottom="50" fontSize="22" text="{text}"/>
+	<s:Button id="btnYes" left="10" bottom="10" label="是" click="btnYes_clickHandler(event)"
+			  fontSize="22"/>
+	<s:Button id="btnNo" right="10" bottom="10" label="否" click="btnNo_clickHandler(event)"
+			  fontSize="22"/>
+</s:Panel>

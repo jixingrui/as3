@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:sb="lift.util.sb.*"
+		 xmlns:shine="azura.common.ui.shine.*"
+		 addedToStage="group1_addedToStageHandler(event)"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 implements="azura.touch.mouserOld.MouserZoomI">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.loaders.BitmapLoader;
+			import azura.common.util.Fork;
+			import azura.touch.mouserOld.MouserZoom;
+			import azura.touch.watcherOld.WatcherDoubleClick;
+			import azura.touch.watcherOld.WatcherDrag;
+			import azura.touch.watcherOld.WatcherEvent;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.osflash.signals.Signal;
+			
+			private var mouseIsDown:Boolean;
+			private var mouseDownAt:Point=new Point();
+			private var holderAt:Point=new Point();
+			
+			private var wdc:WatcherDoubleClick;
+			
+			private var wd:WatcherDrag;
+			
+			private var mz:MouserZoom;
+			
+			private var fork:Fork=new Fork(showLarge,"creation","data");
+			
+			private var largeWidth:int;
+			private var largeHeight:int;
+			
+			private var bitmap:Bitmap;
+			
+			public var whiteness:Number=1.6;
+			
+			public var onClose:Signal=new Signal();
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				mz=new MouserZoom(stage);
+				mz.listener=this;
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				wdc=new WatcherDoubleClick(this);
+				wdc.addEventListener(WatcherEvent.DOUBLECLICK,onDoubleClick);
+				
+				wd=new WatcherDrag(this);
+				wd.addEventListener(WatcherEvent.DRAG_START,onDragStart);
+				wd.addEventListener(WatcherEvent.DRAG_MOVE,onDragMove);
+				
+				large.source=bitmap;
+				showLarge();
+			}
+			
+			private function onDoubleClick(event:WatcherEvent):void{
+				onClose.dispatch();
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function onDragStart(event:WatcherEvent):void{
+				holderAt.x=large.x;
+				holderAt.y=large.y;
+			}
+			
+			private function onDragMove(event:WatcherEvent):void{
+				large.x=holderAt.x+event.delta.x/this.scaleX;
+				large.y=holderAt.y+event.delta.y/this.scaleX;
+			}
+			
+			public function onZoom(scaleX:Number, scaleY:Number):void
+			{
+				var max:Number;
+				
+				var dx:Number=Math.abs(scaleX-1);
+				var dy:Number=Math.abs(scaleY-1);
+				if(dx>dy)
+					max=scaleX;
+				else
+					max=scaleY;
+				
+				this.scaleX*=max;
+				this.scaleY*=max;
+				
+				this.scaleX=Math.max(this.scaleX,0.5);
+				this.scaleY=Math.max(this.scaleY,0.5);
+				
+				this.scaleX=Math.min(this.scaleX,4);
+				this.scaleY=Math.min(this.scaleY,4);
+				
+				wdc.clear();
+				wd.clear();
+			}
+			
+			public function set urlLarge(value:String):void
+			{
+				BitmapLoader.load(value,showBitmap);
+			}
+			
+			public function showBitmap(b:Bitmap):void{
+				bitmap=b;
+				largeWidth=b.width;
+				largeHeight=b.height;
+				show();
+			}
+			
+			private function showLarge():void{
+				var sx:Number=stage.stageWidth/largeWidth;
+				var sy:Number=stage.stageHeight/largeHeight;
+				var scale:Number=Math.min(sx,sy)*0.95;
+				
+				large.transformX=largeWidth/2;
+				large.transformY=largeHeight/2;
+				large.scaleX=scale;
+				large.scaleY=scale;
+				
+				large.x=-largeWidth/2;
+				large.y=-largeHeight/2;
+				
+				this.width=large.width;
+				this.height=large.height;
+				PopUpManager.centerPopUp(this);
+			}
+			
+			private function show():void{
+				var parent:DisplayObject=FlexGlobals.topLevelApplication.root;
+				this.setStyle("modalTransparency", 0.5*whiteness);
+				this.setStyle("modalTransparencyBlur", 0.5*whiteness);
+				this.setStyle("modalTransparencyColor", 0xffffff);
+				PopUpManager.addPopUp(this,parent,true);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="close", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Image id="large" smooth="true"/>
+</s:Group>

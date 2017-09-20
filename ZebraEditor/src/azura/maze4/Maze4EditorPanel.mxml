@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:ui1="azura.avalon.maze3.ui.*"
+		 xmlns:woo="azura.avalon.maze3.ui.woo.*"
+		 xmlns:hard11="azura.karma.hard11.*"
+		 xmlns:local="*"
+		 xmlns:list="azura.common.ui.list.*"
+		 xmlns:animal="azura.banshee.animal.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 xmlns:service="azura.maze4.service.*"
+		 xmlns:maze4="azura.maze4.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_Maze4;
+			
+			import azura.avalon.maze3.data.Mwoo;
+			import azura.banshee.animal.GalPack5;
+			import azura.banshee.engine.Statics;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.maze4.service.Connection;
+			import azura.maze4.service.MazeHardE;
+			import azura.maze4.service.RoomReader;
+			import azura.maze4.service.WooReader;
+			
+			//			private var canvas:LayerMaze3WooEdit;
+			
+			//			private var sn:Maze3WooEditNet;
+			
+			public static var me:Maze4EditorPanel;
+			
+			//			[Bindable]
+			//			public var room:Mroom=new Mroom();
+			
+			private var net_:Connection;
+			
+			[Bindable]
+			private var room:RoomReader;
+			
+			[Bindable]
+			private var woo:WooReader;
+			
+			
+			[Bindable]
+			private var canvas:Maze4Canvas=new Maze4Canvas();
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				me=this;
+				
+				Statics.stage=stage;
+				var config:Config_Maze4=new Config_Maze4();
+				config.onReady.add(onReady);
+				function onReady():void{
+					net_=new Connection(config);
+					Connection.hubCreated.addOnce(register);
+					Connection.mazeCreated.addOnce(mazeCreated);
+					net_.connect();
+				}
+				
+				canvas.init(stage,holder,saReady);
+			}
+			
+			private function saReady():void{
+				
+			}
+			
+			private function register():void{
+				Connection.hub.register(MazeHardE.room,hdRoom);
+				Connection.hub.register(MazeHardE.woo,hdWoo);
+				
+				hdRoom.start();
+			}
+			
+			private function mazeCreated():void{
+				room=new RoomReader();
+				woo=new WooReader();
+			}
+			
+			protected function hdRoom_SELECTHandler(event:Event):void
+			{
+				roomPanel.room=room;
+			}
+			
+			protected function hdWoo_DATAARRIVEHandler(event:Event):void
+			{
+				var wooList:Vector.<Mwoo>=new Vector.<Mwoo>();
+			}
+			
+			protected function hdRoom_UNSELECTHandler(event:Event):void
+			{
+				roomPanel.clear();
+				canvas.clear();
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.maze.save();
+			}
+						
+			protected function hdWoo_SELECTHandler(event:Event):void
+			{
+				wooPanel.woo=woo;
+				//				canvas.woo=wooPanel.woo;
+				//				canvas.idxSelectedWoo=hdWoo.selectedIdx;
+				//				canvas.lookAt(wooPanel.woo.icon.x,wooPanel.woo.icon.y);
+			}
+			
+			protected function hdWoo_UNSELECTHandler(event:Event):void
+			{
+				//				canvas.itemDisplay.clear();
+				wooPanel.clear();
+				canvas.itemImage.clear();
+			}
+			
+			public function rotateEnd():void{
+				wooPanel.woo.angle=canvas.itemImage.zbox.angle;
+				hdWoo.save();
+				canvas.scrollMode();
+			}
+			
+			private function itemZebraLoaded():void{
+				hdWoo.save();
+			}
+			
+			protected function wooPanel_SAVEHandler(event:Event):void
+			{
+				hdWoo.save();
+			}
+			
+			protected function fbLoad_READYHandler(event:Event):void
+			{
+				var gp:GalPack5=new GalPack5();
+				gp.fromPack(fbLoad.file);
+				var master:ZintBuffer=Gal4.readSync(gp.master);
+				Connection.me.maze.load(master);
+			}
+			
+			protected function roomPanel_SAVEHandler(event:Event):void
+			{
+				hdRoom.save();
+			}
+			
+			protected function btnCenter_clickHandler(event:MouseEvent):void
+			{
+				canvas.space.look(0,0);
+			}
+			
+			protected function btnClear_clickHandler(event:MouseEvent):void
+			{
+				Connection.me.maze.clear();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup y="10" horizontalCenter="0">
+		<s:Button id="btnSave" label="save .maze" click="btnSave_clickHandler(event)"/>
+		<file:FileButton6 id="fbLoad" right="0" top="0" label="load .maze"
+						  READY="fbLoad_READYHandler(event)"/>
+		<s:Button id="btnClear" label="clear" click="btnClear_clickHandler(event)"/>
+		<s:Button id="btnCenter" label="center" click="btnCenter_clickHandler(event)"/>
+	</s:HGroup>
+	<s:VGroup x="10" top="20" height="100%" horizontalAlign="center">
+		<hard11:Hard11UI id="hdRoom" enabled="true" reader="{room}"
+						 SELECT="hdRoom_SELECTHandler(event)" title="Room"
+						 UNSELECT="hdRoom_UNSELECTHandler(event)"/>
+		<maze4:RoomPanel id="roomPanel" canvas="{canvas}" enabled="{hdRoom.selectedItem!=null}"
+						 SAVE="roomPanel_SAVEHandler(event)"/>
+	</s:VGroup>
+	<s:VGroup right="10" top="10" bottom="10" width="180">
+		<maze4:WooPanel4 id="wooPanel" canvas="{canvas}" enabled="{hdWoo.selectedItem!=null}"
+						 SAVE="wooPanel_SAVEHandler(event)"/>
+		<hard11:Hard11UI id="hdWoo" width="100%" DATAARRIVE="hdWoo_DATAARRIVEHandler(event)"
+						 enabled="{hdRoom.selectedItem!=null}" reader="{woo}"
+						 SELECT="hdWoo_SELECTHandler(event)" title="Woo"
+						 UNSELECT="hdWoo_UNSELECTHandler(event)"/>
+	</s:VGroup>
+</s:Group>

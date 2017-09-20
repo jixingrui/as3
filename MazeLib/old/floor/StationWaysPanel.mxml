@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.avalon.maze.ui.*"
+		 xmlns:floor="floor.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import assets.station.Config_StationWays;
+			import assets.station.ResManager;
+			
+			import azura.banshee.engine.Stage3DRoot;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.loaders.g2d.LoaderInitializer;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.loaders.FileLoader;
+			import azura.common.util.Fork;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.source.GsFile;
+			import azura.avalon.maze.data.Door;
+			import azura.avalon.maze.data.EventCenter;
+			import azura.avalon.maze.data.Item;
+			import azura.avalon.maze.data.Maze;
+			import azura.avalon.maze.data.RoomShell;
+			
+			import flash.filesystem.File;
+			import flash.utils.setTimeout;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			public var canvas:LayerStationFloors;
+			
+			private var config:Config_StationWays;
+			
+			private var fork:Fork=new Fork(allDone,"stage","config");
+			
+			private var startRoom:RoomShell;
+			
+			public static var stage_:Stage;
+			
+//			override public function set visible(value:Boolean):void{
+//				super.visible=value;
+////				canvas.mouseActive=value;
+//			}
+			
+			public function toItem(name:String):void{
+				var item:Item=canvas.maze.name_Item[name];
+				if(item!=null){
+					trace("dest found:",item.name," at ",item.regionNode.room.data.name,this);
+					canvas.end(item);
+				}else{
+					trace("dest not found",name,this);
+				}
+			}
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				stage_=stage;
+				
+				LoaderInitializer.singleton();
+				ResManager.onReady.add(resReady);
+				ResManager.initAssets();
+				function resReady():void{
+					config=new Config_StationWays();
+					config.onReady.add(onConfigReady);
+				}
+				
+				EventCenter.enterDoor_String.add(enterDoor);
+				function enterDoor(uid:String):void{
+					var door:Door=canvas.maze.getDoor(uid);
+					canvas.currentDoor=door;
+					canvas.enterRoomByName(door.regionNode.room.data.name,canvas.showPath);
+				}
+				
+				Stage3DRoot.singleton().init(stage,stage3DHolder,onInit);
+				function onInit():void{
+					canvas=new LayerStationFloors(G2dEngine.singleton().singleLayer,stage);
+					fork.ready("stage");
+				}
+				
+				function onConfigReady():void{
+					var packFile:File=File.applicationDirectory.resolvePath(config.pack);
+					Gallerid.singleton().cacheMemFromPack(packFile);
+					
+					fork.ready("config");
+				}
+			}
+			
+			private function allDone():void{
+				FileLoader.load(config.maze,onMazeReady);
+				
+				function onMazeReady(ba:ByteArray):void{
+					canvas.maze=new Maze();
+					canvas.maze.fromBytes(new ZintBuffer(ba));
+					trace("room count="+canvas.maze.roomList.length);
+					
+					canvas.enterRoomByName(config.floors[0].name);
+				}
+			}
+			
+			protected function btnStart_clickHandler(event:MouseEvent):void
+			{
+				canvas.mouseMode=LayerStationFloors.MOUSE_STARTPOS;
+				canvas.clearPoints();
+				
+				startRoom=canvas.currentRoom;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="stage3DHolder"/>
+	<s:Button id="btnStart" x="0" y="1050" label="摆放设备" chromeColor="0x0" color="0xffffff" click="btnStart_clickHandler(event)"/>
+</s:Group>

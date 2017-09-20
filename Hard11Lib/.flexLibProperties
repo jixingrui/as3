@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="_SC.ClearDown"/>
+    <classEntry path="_SC.UnselectSC"/>
+    <classEntry path="_SC.SelectSC"/>
+    <classEntry path="_CS.Delete"/>
+    <classEntry path="_SC.RefillUp"/>
+    <classEntry path="_SC.ClearUp"/>
+    <classEntry path="_SC.ClearHold"/>
+    <classEntry path="_SC.UpdateOne"/>
+    <classEntry path="_SC.AppendDown"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

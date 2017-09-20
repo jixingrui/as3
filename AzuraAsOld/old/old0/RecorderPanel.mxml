@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="300" height="108" color="#0000FF" rightClick=";"
+		 creationComplete="panel1_creationCompleteHandler(event)" fontSize="20"
+		 mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"
+		 preinitialize="panel1_preinitializeHandler(event)" title="{header}">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.algorithm.FastMath;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var header:String='';
+			
+			protected function panel1_preinitializeHandler(event:FlexEvent):void
+			{
+				SpeexRecorderOld.addEventListener(TimerEvent.TIMER,onTick);
+				SpeexRecorderOld.addEventListener(TimerEvent.TIMER_COMPLETE,onStop);
+				SpeexRecorderOld.addEventListener(SpeexEvent.SPEEXRECORDED, onEncodeComplete);
+				SpeexRecorderOld.addEventListener(Event.CANCEL, onCancel);
+				SpeexRecorderOld.record(30); 
+			}
+			
+			private function onTick(event:TimerEvent):void{
+				title=header+SpeexRecorderOld.status;
+			}
+			
+			private function onStop(event:TimerEvent):void{
+				lbSend.text="发送中";
+				lbSend.setStyle('color',0x00ff00);
+			}
+			
+			private function onEncodeComplete(event:SpeexEvent):void
+			{
+				SpeexRecorderOld.removeEventListener(TimerEvent.TIMER,onTick);
+				SpeexRecorderOld.removeEventListener(TimerEvent.TIMER_COMPLETE,onStop);
+				SpeexRecorderOld.removeEventListener(SpeexEvent.SPEEXRECORDED, onEncodeComplete);
+				SpeexRecorderOld.removeEventListener(Event.CANCEL, onCancel);
+				
+				dispatchEvent(event.clone());
+				
+				dispatchEvent(new Event(Event.CLOSE));
+			}
+			
+			private function onCancel(event:Event):void{
+				SpeexRecorderOld.removeEventListener(TimerEvent.TIMER,onTick);
+				SpeexRecorderOld.removeEventListener(TimerEvent.TIMER_COMPLETE,onStop);
+				SpeexRecorderOld.removeEventListener(SpeexEvent.SPEEXRECORDED, onEncodeComplete);
+				SpeexRecorderOld.removeEventListener(Event.CANCEL, onCancel);
+				
+				dispatchEvent(new Event(Event.CLOSE));
+				
+			}
+			
+			protected function lbSend_mouseDownHandler(event:MouseEvent):void
+			{
+				lbSend.text="发送中";
+				lbSend.setStyle('color',0x00ff00);
+				SpeexRecorderOld.stop();				
+			}
+			
+			protected function lbDiscard_mouseDownHandler(event:MouseEvent):void
+			{
+				SpeexRecorderOld.discard();
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var rand:int=FastMath.random(1,10);
+				switch(rand)
+				{
+					case 1:
+					{
+						header='免费语音'						
+						break;
+					}
+					case 2:
+					{
+						header='语音不占空间 '
+						break;
+					}
+					case 3:
+					{
+						header='视野内可听见 '
+						break;
+					}	
+					default:
+					{
+						header='正在录音 '
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label id="lbSend" right="10" bottom="10" color="#FF0000" fontSize="50" fontWeight="bold"
+			 mouseDown="lbSend_mouseDownHandler(event)" text="发送"/>
+	<s:Label id="lbDiscard" left="10" bottom="10" color="#000000" fontSize="36" fontWeight="bold"
+			 mouseDown="lbDiscard_mouseDownHandler(event)" text="丢弃"/>
+</s:Panel>

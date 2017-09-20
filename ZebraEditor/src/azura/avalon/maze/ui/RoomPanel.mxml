@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  color="0xff0000" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze.data.EventCenter;
+			import azura.avalon.maze.data.RoomShellOld;
+			import azura.banshee.zforest.Zforest;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.GalMail;
+			import azura.gallerid3.Gallerid;
+			
+			import org.osflash.signals.Signal;
+			
+			[Bindable]
+			public var room:RoomShellOld=new RoomShellOld();
+			
+			private var _onSave:Signal=new Signal();
+			
+			public function get onSave():Signal
+			{
+				return _onSave;
+			}
+			
+			protected function fbRoom_READYHandler(event:Event):void
+			{
+//				var pack:GsFile=new GsFile(fbRoom.file);
+				
+				room.data.mc5=Gallerid.singleton().cacheMemFromPack(fbRoom.file);			
+				
+				var item:GalMail=Gallerid.singleton().getData(room.data.mc5);
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				var zf:Zforest=new Zforest();
+				zf.fromBytes(data);
+				room.data.zmax=zf.base.zMax;
+				trace("zmax="+room.data.zmax,this);
+				
+				onSave.dispatch();
+				
+//				EventCenter.showMap_Zforest.dispatch(zf);
+			}
+			
+			protected function lnScale_changeHandler(event:Event):void
+			{
+				room.data.scale=lnScale.number;
+				onSave.dispatch();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<label:LabelString2 label="uid" string="{room.data.uid}"/>
+	<label:LabelNumber2 id="lnScale" label="scale" change="lnScale_changeHandler(event)" max="100"
+					 min="10" number="{room.data.scale}"/>
+	<label:LabelNumber2 label="tilt" max="90" min="-90" number="{room.data.tilt}"/>
+	<label:LabelNumber2 label="pan" max="180" min="-180" number="{room.data.pan}"/>
+	<file:FileButton6 id="fbRoom" label="load .zforest" _ext="*.zforest"
+					  READY="fbRoom_READYHandler(event)"/>
+</s:VGroup>

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:ui1="azura.avalon.maze3.ui.*"
+		 xmlns:woo="azura.avalon.maze3.ui.woo.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_Maze3;
+			
+			import azura.avalon.maze.data.Dump;
+			import azura.avalon.maze3.data.Mroom;
+			import azura.avalon.maze3.data.Mwoo;
+			import azura.avalon.maze3.service.Maze3WooEditNet;
+			import azura.banshee.engine.Stage3DRoot;
+			import azura.banshee.engine.Statics;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.g2d.LoaderInitializer;
+			import azura.banshee.zforest.Zforest;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			import azura.helios.hard10.hub.HardItem;
+			
+			private var canvas:LayerMaze3WooEdit;
+			
+			private var sn:Maze3WooEditNet;
+			
+			private var this_:Maze3WooEditPanel;
+			
+			[Bindable]
+			public var room:Mroom=new Mroom();
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Statics.stage=stage;
+				LoaderInitializer.singleton();
+				
+				this_=this;
+				
+				Stage3DRoot.singleton().init(stage,holder,onInit);
+				function onInit():void{
+					canvas=new LayerMaze3WooEdit(G2dEngine.singleton().singleLayer,stage);
+					canvas.panel=this_;
+					wooPanel.canvas=canvas;
+				}
+				
+				var config:Config_Maze3=new Config_Maze3();
+				config.onReady.add(onReady);
+				function onReady():void{
+					sn=new Maze3WooEditNet(config);
+					Maze3WooEditNet.cs.cs.hub.register(drRoom);
+					Maze3WooEditNet.cs.cs.hub.register(drWoo);
+				}
+			}
+			
+			protected function drRoom_SELECTHandler(event:Event):void
+			{
+				
+				var data:ZintBuffer=Gal4.readSync(room.me5Zforest);
+				if(data==null){
+					canvas.clear();
+					return;
+				}
+				
+				data.uncompress();
+				
+				var zf:Zforest=new Zforest();
+				zf.fromBytes(data);
+				room.zmax=zf.base.zMax;
+				
+				canvas.loadZforest(zf);
+			}
+			
+			protected function drWoo_DATAARRIVEHandler(event:Event):void
+			{
+				var wooList:Vector.<Mwoo>=new Vector.<Mwoo>();
+				for each(var i:HardItem in drWoo.down){
+					var d:Mwoo=new Mwoo();
+					try
+					{
+						d.fromBytes(i.data);
+					} 
+					catch(error:Error) 
+					{
+						d.init();
+					}
+					i.data.position=0;
+					wooList.push(d);
+				}
+				
+				canvas.loadWoo(wooList);
+			}
+			
+			protected function drRoom_UNSELECTHandler(event:Event):void
+			{
+				trace("unselect",this);
+				canvas.clear();
+			}
+			
+			protected function btnDump_clickHandler(event:MouseEvent):void
+			{
+				Maze3WooEditNet.cs.cs.dump(onDump);
+			}
+			
+			private function onDump(zb:ZintBuffer):void{
+				var dump:Dump=new Dump();
+				dump.maze.fromBytes(zb);
+				dump.eyeRoomUID=room.uid;
+				dump.eyeX=canvas.root.xView;
+				dump.eyeY=canvas.root.yView;
+				
+				var data:ZintBuffer=dump.toBytes();
+				data.compress();
+				
+				var save:FileReference=new FileReference();
+				save.save(data,"dump.zmaze");
+			}
+			
+			protected function drWoo_SELECTHandler(event:Event):void
+			{
+				canvas.woo=wooPanel.woo;
+				canvas.idxSelectedWoo=drWoo.selectedIdx;
+				canvas.lookAt(wooPanel.woo.icon.x,wooPanel.woo.icon.y);
+			}
+			protected function drWoo_UNSELECTHandler(event:Event):void
+			{
+				//				canvas.itemDisplay.clear();
+			}
+			public function rotateItem(angle:int):void{
+				//				canvas.itemDisplay.angle=angle;
+				//				drWoo.save();
+			}
+			
+			private function itemZebraLoaded():void{
+				drWoo.save();
+			}
+			
+			protected function wooPanel_SAVEHandler(event:Event):void
+			{
+				drWoo.save();
+			}
+			
+			protected function fbCache_READYHandler(event:Event):void
+			{
+				new GalPack4().loadFrom(fbCache.file);
+			}
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup y="10" horizontalCenter="0">
+		<s:Button id="btnDump" label="dump .zmaze" enabled="{drRoom.selectedItem!=null}" click="btnDump_clickHandler(event)"/>
+		<file:FileButton6 id="fbCache" right="0" top="0" label="load cache"
+						  READY="fbCache_READYHandler(event)"/>
+	</s:HGroup>
+	<s:VGroup x="10" top="20" bottom="10" horizontalAlign="center"
+			  mouseDown="event.stopImmediatePropagation()"
+			  mouseUp="event.stopImmediatePropagation()">
+		<ui:Hard10UI id="drRoom" enabled="true" reader="{room}" SELECT="drRoom_SELECTHandler(event)"
+					 title="Room" UNSELECT="drRoom_UNSELECTHandler(event)"/>
+	</s:VGroup>
+	<s:VGroup right="10" top="10" bottom="10" width="180">
+		<woo:WooPanel id="wooPanel" enabled="{drWoo.selectedItem!=null}"
+					  SAVE="wooPanel_SAVEHandler(event)"/>
+		<ui:Hard10UI id="drWoo" width="100%" DATAARRIVE="drWoo_DATAARRIVEHandler(event)"
+					 enabled="{drRoom.selectedItem!=null}" reader="{wooPanel.woo}"
+					 SELECT="drWoo_SELECTHandler(event)" title="Woo"
+					 UNSELECT="drWoo_UNSELECTHandler(event)"/>
+	</s:VGroup>
+</s:Group>

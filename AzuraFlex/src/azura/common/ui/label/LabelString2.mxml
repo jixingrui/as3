@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  width="100%" height="20" currentState="Show" fontSize="18" gap="0">
+	<fx:Script>
+		<![CDATA[			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var label:String="LabelString";
+			
+			[Bindable]
+			public var string:String='';
+			
+			[Bindable]
+			public var maxDisplayedLines:int=1;
+			
+			public var old:String;
+			
+			public var editable:Boolean=true;
+			
+			protected function tiString_enterHandler(event:FlexEvent):void
+			{
+				old=string;
+				string=tiString.text;
+				currentState="Show";
+				dispatchEvent(new Event("change"));
+			}
+			
+			protected function tiString_focusOutHandler(event:FocusEvent):void
+			{
+				currentState="Show";
+			}
+			
+			protected function lb_clickHandler(event:MouseEvent):void
+			{
+				if(editable)
+					currentState="Edit";
+			}
+			
+			protected function state1_enterStateHandler(event:FlexEvent):void
+			{
+				tiString.text=string;
+				callLater(tiString.setFocus);
+			}
+			
+			protected function tiString_keyUpHandler(event:KeyboardEvent):void
+			{
+				event.stopImmediatePropagation();
+				if(event.keyCode==Keyboard.ESCAPE){
+					currentState="Show";
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="Show"/>
+		<s:State enterState="state1_enterStateHandler(event)" name="Edit"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, _text objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Group id="gpShell" width="100%" height="100%">
+		<s:Label id="lb" width="100%" maxDisplayedLines="{maxDisplayedLines}" verticalCenter="0"
+				 text.Edit="{label}"
+				 click.Show="lb_clickHandler(event)" text.Show="{label}{string}"/>
+		<s:TextInput id="tiString" includeIn="Edit" width="{gpShell.width}" height="{lb.height}"
+					 click="event.stopImmediatePropagation()" color="0"
+					 enter="tiString_enterHandler(event)" focusOut="tiString_focusOutHandler(event)"
+					 fontSize="10" keyDown="event.stopImmediatePropagation()"
+					 keyUp="tiString_keyUpHandler(event)" text="{string}" verticalCenter="0"/>
+	</s:Group>
+</s:HGroup>

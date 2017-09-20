@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="bordercontainer1_creationCompleteHandler(event)"
+		 implements="azura.common.ui.grid.GridI">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.grid.ItemI;
+			import azura.common.ui.mouse.WatcherDrag;
+			import azura.common.ui.mouse.WatcherEvent;
+			
+			import com.greensock.TweenMax;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			public var gridMotor:GridMotorVertical;
+			
+			private var drag:WatcherDrag;
+			
+			private var downY:int;
+			
+			private var tween:TweenMax;
+			
+			protected function bordercontainer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				gridMotor=new GridMotorVertical(this);
+//				gridMotor.setSize(width,height,240,200);
+				
+				holder.x=this.width/2;
+				holder.y=this.height/2;
+				
+				drag=new WatcherDrag(this);
+				drag.addEventListener(WatcherEvent.DRAG_START,dragStart);
+				drag.addEventListener(WatcherEvent.DRAG_MOVE,dragMove);
+				drag.addEventListener(WatcherEvent.DRAG_END,dragEnd);
+			}
+			
+			private function dragStart(event:WatcherEvent):void{
+				if(tween!=null){
+					tween.kill();
+					tween=null;					
+				}
+				downY=gridMotor.dy;
+			}
+			
+			private function dragMove(event:WatcherEvent):void{
+//				trace(event.delta.y);
+				gridMotor.dragMove(downY+event.delta.y);
+			}
+			
+			private function dragEnd(event:WatcherEvent):void{
+				//				trace("drag end");
+//				trace("end",event.delta.y);
+				if(event.delta.y!=0)
+					tween=TweenMax.to(this,0.5,{moveTo:tweenY});
+//				if(gridMotor.dy!=tweenY)
+				topLine.visible=false;
+				bottomLine.visible=false;
+			}
+			
+			public function gridAddItem(item:ItemI):void{
+				holder.addElement(item as IVisualElement);
+			}	
+			
+			public function gridRemoveItem(item:ItemI):void{
+				holder.removeElement(item as IVisualElement);
+			}
+			
+			public function gridMove(x:int, y:int):void
+			{
+				holder.x=x+width/2;
+				holder.y=y+height/2;
+			}
+			
+			private var tweenY:int;
+			public function gridTweenTo(dy:int):void{
+				tweenY=dy;
+			}
+			
+			public function get moveTo():int{
+				return gridMotor.dy;
+			}
+			
+			public function set moveTo(value:int):void{
+				//				gridMotor.motorMove(value);
+				gridMotor.dy=value;
+			}
+			
+			public function hitHead():void{
+				//				trace("hit head");
+				topLine.visible=true;
+			}
+			public function hitTail():void{
+				bottomLine.visible=true;
+				//				trace("hit tail");
+			}
+			
+			public function gridAtPage(idx:int):void{
+				trace("id",name);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Group id="holder"/>
+	<mx:HRule id="topLine" visible="false" top="2" width="40%" horizontalCenter="0"
+			  shadowColor="0xff0000" strokeColor="0xff00000" strokeWidth="2"/>
+	<mx:HRule id="bottomLine" visible="false" bottom="2" width="40%" horizontalCenter="0"
+			  shadowColor="0xff0000" strokeColor="0xff00000" strokeWidth="2"/>
+</s:Group>

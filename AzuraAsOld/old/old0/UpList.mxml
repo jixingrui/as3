@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:List xmlns:fx="http://ns.adobe.com/mxml/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		dragComplete="list1_dragCompleteHandler(event)" dragEnabled="true"
+		dragStart="list1_dragStartHandler(event)" dropEnabled="true"
+		itemRenderer="azura.hellios.drass6.itemRenderer.UpRenderer">
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.Drass6;
+			import mx.core.DragSource;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			
+			public var host:Drass6;		
+			
+			protected function list1_dragStartHandler(event:DragEvent):void
+			{
+				var dragSource:DragSource = new DragSource();	
+				dragSource.addData(host._idDrass,Drass6.drassId);
+				dragSource.addData(Drass6.drassPosUp,Drass6.drassPos);
+				dragSource.addData(selectedIndex,Drass6.drassDragIndex);
+				
+				addDragData(dragSource);
+				DragManager.doDrag(this,dragSource,event,createDragIndicator());
+			}
+			
+			protected function list1_dragCompleteHandler(event:DragEvent):void
+			{
+				selectedIndex=-1;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="justify" requestedMinRowCount="1"/>
+	</s:layout>
+</s:List>

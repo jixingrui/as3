@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009"
+					   xmlns:s="library://ns.adobe.com/flex/spark"
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:editor2="azura.banshee.zbox3.editor.*"
+					   addedToStage="windowedapplication1_addedToStageHandler(event)"
+					   backgroundAlpha="0" backgroundColor="0" creationPolicy="all" frameRate="60"
+					   preinitialize="windowedapplication1_preinitializeHandler(event)"
+					   showStatusBar="false">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			protected function windowedapplication1_preinitializeHandler(event:FlexEvent):void
+			{
+				nativeWindow.width=Capabilities.screenResolutionX*0.9;
+				nativeWindow.height=Capabilities.screenResolutionY*0.9;
+				nativeWindow.x=0;
+				nativeWindow.y=Capabilities.screenResolutionY*0.05;
+				
+				nativeWindow.width=Math.min(2048,nativeWindow.width);
+				nativeWindow.height=Math.min(2048,nativeWindow.height);
+			}
+			
+			protected function windowedapplication1_addedToStageHandler(event:Event):void
+			{
+				stage.addEventListener(KeyboardEvent.KEY_DOWN,keyDown);
+				function keyDown(ke:KeyboardEvent):void{
+					if(ke.keyCode==Keyboard.ESCAPE){
+						nativeApplication.exit();
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<editor2:ZebraEditorShell3/>
+</s:WindowedApplication>

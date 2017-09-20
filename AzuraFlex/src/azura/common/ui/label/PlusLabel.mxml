@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  width="100%" height="100%" currentState="normal" gap="0">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import spark.components.supportClasses.TextBase;
+			
+			private var _plus:Boolean;
+			
+			[Bindable]
+			public var label:String;
+			
+			TextBase.mx_internal::truncationIndicatorResource = ".";
+			
+			[Bindable]
+			public function get plus():Boolean
+			{
+				return _plus;
+			}
+			
+			public function set plus(value:Boolean):void
+			{
+				_plus = value;
+				if(value)
+					currentState='plus';
+				else
+					currentState='normal';
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="plus"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Group id="groupPlus" height="100%">
+		<s:Label id="lbPlus" includeIn="plus" x="0" color="0x00ff00" fontSize="18"
+				 maxDisplayedLines="1" text="+" verticalCenter="0"/>
+	</s:Group>
+	<s:Group id="groupText" width="100%" height="100%">
+		<s:Label id="lbLabel" x="0" width="100%" fontSize="18" maxDisplayedLines="1"
+				 showTruncationTip="true" text="{label}" verticalCenter="0"/>
+	</s:Group>
+</s:HGroup>

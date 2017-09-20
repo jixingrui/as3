@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:List xmlns:fx="http://ns.adobe.com/mxml/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		dragComplete="list1_dragCompleteHandler(event)" dragDrop="list1_dragDropHandler(event)"
+		dragEnabled="true" dragEnter="list1_dragEnterHandler(event)" rightClick="list1_rightClickHandler(event)"
+		dragStart="list1_dragStartHandler(event)"
+		itemRenderer="azura.hellios.drass6.itemRenderer.LowRenderer"
+		skinClass="azura.hellios.drass6.itemRenderer.DropArrowSkin">
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.Drass6;
+			
+			import mx.core.DragSource;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			
+			public var host:Drass6;		
+			
+			protected function list1_dragStartHandler(event:DragEvent):void
+			{
+				var dragSource:DragSource = new DragSource();	
+				dragSource.addData(host._idDrass,Drass6.drassId);
+				dragSource.addData(Drass6.drassPosLow,Drass6.drassPos);
+				dragSource.addData(selectedIndex,Drass6.drassDragIndex);
+				
+				addDragData(dragSource);
+				DragManager.doDrag(this,dragSource,event,createDragIndicator());
+			}
+			
+			protected function list1_dragEnterHandler(event:DragEvent):void
+			{
+				if(event.dragSource.hasFormat(Drass6.drassId)){
+					dropEnabled=true;
+				}
+			}
+			
+			protected function list1_dragDropHandler(event:DragEvent):void
+			{
+				event.preventDefault();
+				var fromId:int=event.dragSource.dataForFormat(Drass6.drassId) as int;
+				var fromPos:String=event.dragSource.dataForFormat(Drass6.drassPos) as String;				
+				var fromIndex:int=event.dragSource.dataForFormat(Drass6.drassDragIndex) as int;
+				
+				var dropIndex:int = layout.calculateDropLocation(event).dropIndex-1;		
+				
+//				trace('from '+fromId+'.'+fromPos+'.'+fromIndex+' to '+host._drassId+'.'+dropIndex);
+				
+				if(fromId==host._idDrass
+					&&fromPos==Drass6.drassPosLow
+					&&fromIndex!=dropIndex){
+					host.reOrder(fromIndex,dropIndex);
+				}
+				
+				cleanup();
+			}
+			
+			protected function list1_dragCompleteHandler(event:DragEvent):void
+			{				
+				cleanup();
+			}
+			
+			private function cleanup():void{
+				layout.hideDropIndicator();
+				destroyDropIndicator();
+				selectedIndex=-1;
+				dropEnabled=false;
+			}
+			
+			protected function list1_rightClickHandler(event:MouseEvent):void
+			{
+				selectedIndex=-1;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata> 
+		[Event(name="_Rename", type="azura.hellios.drass6.itemRenderer.DrassEvent")] 
+		[Event(name="_RenameComplete", type="azura.hellios.drass6.itemRenderer.DrassEvent")]
+		[Event(name="_RightClick", type="azura.hellios.drass6.itemRenderer.DrassEvent")]
+	</fx:Metadata> 
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="justify"/>
+	</s:layout>
+</s:List>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.pano.PanoViewDragger;
+			import azura.banshee.pano.PanoViewer;
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.source.GsFile;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			private var pano:PanoViewer;
+			private var hand:PanoViewDragger=new PanoViewDragger();
+			private var ec:EditorCanvas3;
+			
+			public function activate(ec:EditorCanvas3):void{
+				this.ec=ec;
+				pano=new PanoViewer(ec.away);
+				hand.host=pano;
+				ec.space.addGesture(hand);
+			}
+			
+			public function deactivate():void{
+				ec.space.removeGesture(hand);
+				pano.dispose();
+			}
+			
+			protected function fbZpano_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZpano.file);				
+				var data:ZintBuffer=Gal4.readSync(master);
+				
+				pano.load(data);
+				pano.tiltSpeed=1;
+			}
+		]]>
+	</fx:Script>
+	
+	<file:FileButton6 id="fbZpano" x="10" y="50" label="读取 .zpano" _ext="*.zpano"
+					  READY="fbZpano_READYHandler(event)"/>
+</s:Group>

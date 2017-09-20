@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:util="lift.util.*"
+		 xmlns:m1="lift.m1.*"
+		 xmlns:sb="lift.util.sb.*"
+		 xmlns:shine="azura.common.ui.shine.*" addedToStage="group1_addedToStageHandler(event)"
+		 width="2048" height="1536" creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import azura.touch.watcherOld.WatcherDoubleClick;
+			import azura.touch.watcherOld.WatcherEvent;
+			import azura.common.util.Fork;
+			
+			import mx.events.FlexEvent;
+			
+			public var url:String;
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			
+			//			private var video:Video;
+			private var video:StageVideo;
+			
+			private var wd:WatcherDoubleClick;
+			
+			private var fork:Fork=new Fork(onFork,"stage","file");
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//				OSMFSettings.enableStageVideo=false;
+				wd=new WatcherDoubleClick(this);
+				wd.addEventListener(WatcherEvent.DOUBLECLICK,onDoubleClick);
+				
+				//				video=new Video();
+				//				video.smoothing=true;
+				//				video.x=0;
+				//				video.y=0;
+				//				video.width=2048;
+				//				video.height=1536;
+				
+				//				holder.addChild(video);				
+			}
+			
+			private function onDoubleClick(we:WatcherEvent):void{
+				close();
+			}
+			
+			public function playUrl(url:String):void{
+				this.url=url;
+				
+				fork.ready("file");
+			}
+			
+			private function onNetStatusNS(nse:NetStatusEvent):void{
+				if(nse.info.code=="NetStream.Play.Stop"){
+					close();
+				}
+			}
+			
+			private function onFork():void{
+				nc=new NetConnection();
+				nc.connect(null);				
+				ns=new NetStream(nc);
+				ns.addEventListener(NetStatusEvent.NET_STATUS,onNetStatusNS);
+				ns.client=this;
+				video.attachNetStream(ns);				
+				ns.play(url);
+				//				trace("play",url,name);
+			}
+			
+			public function close():void{
+				if(video!=null)
+					video.attachNetStream(null);
+				if(ns!=null)
+					ns.close();
+				dispatchEvent(new Event("FINISH"));
+			}
+			
+			public function onPlayStatus(info:Object):void{
+				//				trace("play status",info,this);
+			}
+			
+			public function onMetaData(info:Object):void{
+				//				video.width=2048;
+				//				video.height=1536;
+				//				video.x=0;
+				//				video.y=0;
+			}
+			
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				setStage(stage);
+			}
+			
+			public function setStage(stage:Stage):void{
+				var vp:Rectangle=new Rectangle();
+				vp.width=stage.stageWidth;
+				vp.height=stage.stageHeight;
+				vp.x=0;
+				vp.y=0;
+				//				vp.x=(stage.stageWidth-vp.width)/2;
+				//				vp.y=(stage.stageHeight-vp.height)/2;
+				
+				video=stage.stageVideos[0];
+				video.addEventListener(StageVideoEvent.RENDER_STATE, onRender);
+				//				video.viewPort=vp;
+				
+				fork.ready("stage");
+				
+			}
+			
+			private function onRender(e:StageVideoEvent):void
+			{
+				video.viewPort = new Rectangle(0, 0, 1024, 768);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="FINISH", type="flash.events.Event")]
+	</fx:Metadata>
+</s:Group>

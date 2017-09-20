@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui="azura.common.ui.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 xmlns:list="azura.common.ui.list.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.banshee.zebra.editor.ztree.Ztree3;
+			import azura.banshee.zforest.Ztree;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			private var mapName:String;
+			
+			private var wayLoaded:Boolean;
+			
+			private var canvas:ZforestEditor3Canvas=new ZforestEditor3Canvas();
+			
+			public function activate(ec:EditorCanvas3):void{
+				canvas.activate(ec);
+			}
+			
+			public function deactivate():void{
+				canvas.deactivate();
+			}
+			//			public function activate(on:Boolean):void{
+			//				if(on){
+			//					canvas=new LayerZforestEditor(G2dEngine.singleton().singleLayer);
+			//				}else{
+			//					canvas.dispose();
+			//					leZtree.clear();
+			//				}
+			//			}
+			
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZebra.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				//				canvas.zforestNode.zforest=canvas.zforest;
+				canvas.zforest.land.fromBytes(data);
+				//				canvas.moveScreen.bounder=new Bounder(Statics.stage.stageWidth,Statics.stage.stageHeight,
+				//					canvas.zforest.land.boundingBox.width,canvas.zforest.land.boundingBox.height);
+				canvas.zforestNode.reload();
+			}
+			
+			protected function fbZmask_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZmask.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				canvas.zforest.mask.fromBytes(data);
+				canvas.zforestNode.reload();
+			}
+			
+			protected function fbZbase_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZbase.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				canvas.zforest.base.fromBytes(data);
+			}
+			
+			protected function fbZway_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZway.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				canvas.zforest.loadZway(data);
+				
+				wayLoaded=true;
+			}
+			
+			protected function lnScale_changeHandler(event:Event):void
+			{
+				canvas.zforest.scale=lnScale.number;
+			}
+			
+			protected function btnZforest_clickHandler(event:MouseEvent):void
+			{
+				var gp:GalPack4=new GalPack4();
+				var data:ByteArray=canvas.zforest.toBytes();
+				data.compress();
+				gp.setMaster(data);
+				gp.addSlaveList(canvas.zforest.getMe5List());
+				
+				gp.saveToFile(".zforest");
+			}
+			
+			protected function fbZforest_READYHandler(event:Event):void
+			{
+				mapName=fbZforest.file.name;
+				mapName=FileUtil.getNoExt(mapName);
+				
+				leZtree.clear();
+				
+				var master:String=new GalPack4().loadFrom(fbZforest.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				canvas.loadZforest(data);
+				
+				for each(var ztree:Ztree in canvas.zforest.ztreeList){
+					leZtree.insert(ztree);
+				}
+			}
+			
+			protected function leZtree_ADDHandler(event:Event):void
+			{
+				var zt:Ztree3=canvas.zforestNode.insert();
+				//				canvas.zforest.ztreeList.splice(leZtree.idx+1,0,zt);
+				
+				//				canvas.zforestNode.reload();
+				
+				leZtree.insert(zt);
+				
+				
+				//				canvas.select(leZtree.idx);
+				
+				//				canvas.zforestNode.zforest=canvas.zforest;
+			}
+			
+			protected function leZtree_MOVEHandler(event:Event):void
+			{
+				canvas.select(leZtree.idx);
+			}
+			
+			protected function fbZtree_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZtree.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				var ztree:Ztree3=leZtree.current as Ztree3;
+				ztree.fromBytes(data);
+				
+				canvas.zforestNode.feedZebra(ztree.zebra);
+				//				canvas.moveZtree(canvas.root.xView,canvas.root.yView);
+			}
+			
+			//			protected function btnMoveZtree_clickHandler(event:MouseEvent):void
+			//			{
+			//				canvas.mouseMode=ZforestEditor3Canvas.MouseDragItem;
+			//			}
+			
+			protected function btnJump_clickHandler(event:MouseEvent):void
+			{
+				canvas.jumpToHere();
+			}
+			
+			protected function leZtree_DELETEHandler(event:Event):void
+			{
+				//==================== todo ========================
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup x="10" y="50" horizontalAlign="center">
+		<file:FileButton6 id="fbZebra" label="load .zebra" _ext="*.zebra"
+						  READY="fbZebra_READYHandler(event)"/>
+		<file:FileButton6 id="fbZmask" label="load .zmask" _ext="*.zmask"
+						  READY="fbZmask_READYHandler(event)"/>
+		<file:FileButton6 id="fbZbase" label="load .zbase" _ext="*.zbase"
+						  READY="fbZbase_READYHandler(event)"/>
+		<list:ListEditor id="leZtree" label="ztree" ADD="leZtree_ADDHandler(event)"
+						 DELETE="leZtree_DELETEHandler(event)" MOVE="leZtree_MOVEHandler(event)"/>
+		<s:VGroup enabled="{leZtree.idx&gt;=0}">
+			<file:FileButton6 id="fbZtree" label="load .ztree" _ext="*.ztree"
+							  READY="fbZtree_READYHandler(event)"/>
+			<s:Button id="btnJump" label="focus" click="btnJump_clickHandler(event)"
+					  enabled="{leZtree.current!=null}"/>
+		</s:VGroup>
+		<label:LabelNumber2 id="lnScale" label="scale" change="lnScale_changeHandler(event)"
+							color="0xffffff" max="100" min="1" number="100"/>
+		<file:FileButton6 id="fbZway" label="load .zway" _ext="*.zway"
+						  READY="fbZway_READYHandler(event)"/>
+		<s:Button id="btnZforest" label="save .zforest" click="btnZforest_clickHandler(event)"/>
+		<file:FileButton6 id="fbZforest" label="load .zforest" _ext="*.zforest"
+						  READY="fbZforest_READYHandler(event)"/>
+	</s:VGroup>
+</s:Group>

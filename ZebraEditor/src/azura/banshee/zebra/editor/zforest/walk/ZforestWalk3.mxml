@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox2.editor.EditorCanvas;
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			private var canvas:LayerZforestWalk3=new LayerZforestWalk3();
+			
+			public function activate(ec:EditorCanvas3):void{
+				canvas.activate(ec);
+			}
+			
+			public function deactivate():void{
+				canvas.deactivate();
+			}
+			
+			protected function fbZforest_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZforest.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				canvas.loadZforest(data);
+			}
+			
+//			protected function fbAvatar_READYHandler(event:Event):void
+//			{
+//				var master:String=new Gal4Pack().loadFrom(fbAvatar.file);
+//				var data:ZintBuffer=Gal4.readSync(master);
+//				data.uncompress();
+//				
+//				canvas.zanimal.fromBytes(data);
+//				var z:Zebra=new Zebra();
+//				z.fromBytes(data);
+//				canvas.avatar.zebra=z;
+//			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup x="10" y="50">
+		<file:FileButton6 id="fbZforest" label="load .zforest" _ext="*.zforest"
+						  READY="fbZforest_READYHandler(event)"/>
+<!--		<file:FileButton6 id="fbAvatar" label="load .zanimal" _ext="*.zanimal"
+						  READY="fbAvatar_READYHandler(event)"/>	-->	
+	</s:VGroup>
+</s:Group>

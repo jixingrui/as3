@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="common.ui.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui1="azura.common.ui.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 xmlns:list="azura.common.ui.list.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			public var canvas:ZebraDishCanvas=new ZebraDishCanvas();
+			
+			public function activate(ec:EditorCanvas3):void{
+				canvas.activate(ec);
+				lnAngle.number=canvas.data.angle;
+			}
+			
+			public function deactivate():void{
+				canvas.deactivate();
+				leLayer.clear();
+			}
+			
+			//=================== S/L ==================
+			protected function fbLoad_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbLoad.file);
+				var zb:ZintBuffer=Gal4.readSync(master);
+				zb.uncompress();
+				
+				canvas.load(zb);
+				lnAngle.number=canvas.data.angle;
+				
+				leLayer.clear();
+				for each(var dish:Zdish in canvas.data.dishList){
+					leLayer.insert(dish);
+				}
+				leLayer.idx=0;
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				var zb:ZintBuffer=canvas.data.toBytes();
+				zb.compress();
+				
+				var gp:GalPack4=new GalPack4();
+				gp.setMaster(zb);
+				
+				var slaveList:Vector.<String>=new Vector.<String>();
+				canvas.data.getMc5List(slaveList);
+				gp.addSlaveList(slaveList);
+				
+				gp.saveToFile(".zdish");
+			}
+			//================ holder ================
+			
+			protected function lnAngle_changeHandler(event:Event):void
+			{
+				canvas.data.angle=lnAngle.number;
+			}
+			
+			//=================== leLayer ==============
+			protected function leLayer_ADDHandler(event:Event):void
+			{
+				var dish:Zdish=canvas.insertAt(leLayer.idx+1);
+				leLayer.insert(dish);
+				
+				lnDist.number=currentDish.dist;
+			}
+			
+			protected function leLayer_MOVEHandler(event:Event):void
+			{
+				lnDist.number=currentDish.dist;
+				canvas.select(leLayer.idx);
+			}
+			
+			protected function leLayer_DELETEHandler(event:Event):void
+			{
+				canvas.removeAt(leLayer.idx);
+			}
+			
+			//================== dish ==================
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZebra.file);		
+				Zdish(leLayer.current).mc5Zebra=master;
+				canvas.update(leLayer.idx);
+				
+				canvas.select(leLayer.idx);
+			}
+			
+			private function get currentDish():Zdish{
+				return leLayer.current as Zdish;
+			}
+			
+			protected function lnDist_changeHandler(event:Event):void
+			{
+				currentDish.dist=lnDist.number;
+			}
+			
+			protected function btnAnchor_clickHandler(event:MouseEvent):void
+			{
+				currentDish.x=canvas.ec.space.xView*currentDish.scaleD;
+				currentDish.y=canvas.ec.space.yView*currentDish.scaleD;
+				canvas.update(leLayer.idx);
+			}
+			
+			
+			protected function btnGoto_clickHandler(event:MouseEvent):void
+			{
+				canvas.lookAt(currentDish.x,currentDish.y);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<!--	<s:SpriteVisualElement id="holder"/>-->
+	<s:VGroup x="10" y="50" horizontalAlign="center" mouseDown="event.stopImmediatePropagation()"
+			  mouseMove="event.stopImmediatePropagation()"
+			  mouseUp="event.stopImmediatePropagation()">
+		<s:HGroup>
+			<file:FileButton6 id="fbLoad" _ext="*.zdish" label="load .zdish" READY="fbLoad_READYHandler(event)"/>
+			<s:Button id="btnSave" label="save .zdish" click="btnSave_clickHandler(event)"/>
+		</s:HGroup>
+		<label:LabelNumber2 id="lnAngle" label="angle" min="0" max="90" change="lnAngle_changeHandler(event)" color="0xffffff"/>
+		<list:ListEditor id="leLayer" label="id" ADD="leLayer_ADDHandler(event)"
+						 DELETE="leLayer_DELETEHandler(event)" MOVE="leLayer_MOVEHandler(event)"/>
+		<s:VGroup width="100%" enabled="{leLayer.idx&gt;=0}" horizontalAlign="center">
+			<file:FileButton6 id="fbZebra" label="读取.zebra" _ext="*.zebra"
+							  READY="fbZebra_READYHandler(event)"/>
+			<s:HGroup>
+				<label:LabelNumber2 id="lnDist" label="dist" change="lnDist_changeHandler(event)"
+									color="0xffffff"/>
+			</s:HGroup>
+			<s:HGroup>
+				<s:Button id="btnGoto" label="focus" click="btnGoto_clickHandler(event)"/>
+				<s:Button id="btnAnchor" label="anchor" click="btnAnchor_clickHandler(event)"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+</s:Group>

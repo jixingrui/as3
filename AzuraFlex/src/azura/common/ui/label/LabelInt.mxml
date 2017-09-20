@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<label:LabelNumber2 xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:local="*" xmlns:ui="azura.common.ui.*" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			override public function set number(v:Number):void
+			{
+				super.number=int(v);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</label:LabelNumber2>

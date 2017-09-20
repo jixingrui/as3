@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   enabled="{node!=null}">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import azura.hellios.drass6.Node;
+			[Bindable]
+			private var node:Node;
+			
+			public function get _node():Node{
+				if(node!=null&&node.soil!=null)
+					node.soil.position=0;
+				return node;
+			}
+			
+			public function set _node(value:Node):void{
+				node=value;
+				if(node!=null){
+					_read();
+//					node.reader=this;
+//					if(node.soil==null || node.soil.length==0){
+//						_clear();
+//					}else{
+//						_read();
+//						node.soil.position=0;
+//					}
+				}
+			}
+			
+//			public function _clear():void{
+//				throw new IllegalOperationError("Please override this.");
+//			}
+			
+			public function _read():void{
+				throw new IllegalOperationError("Please override this.");				
+			}
+			
+			public function _pack():ByteArray{
+				throw new IllegalOperationError("Please override this.");				
+			}
+		]]>
+	</fx:Script>
+</s:BorderContainer>

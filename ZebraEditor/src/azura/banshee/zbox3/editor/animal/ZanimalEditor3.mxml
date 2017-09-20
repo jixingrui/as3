@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.common.ui.*"
+		 xmlns:zforest="azura.banshee.zforest.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:label="azura.common.ui.label.*"
+		 xmlns:list="azura.common.ui.list.*"
+		 width="100%" height="100%" implements="azura.banshee.zbox3.editor.PageI3">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zbox3.editor.EditorCanvas3;
+			import azura.banshee.zbox3.zebra.zanimal.Zanimal3;
+			import azura.banshee.zbox3.zebra.zanimal.Zpose3;
+			import azura.banshee.zbox3.zebra.zanimal.Zrace3;
+			import azura.banshee.zebra.Zebra3;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			[Bindable]
+			private var race:Zrace3=new Zrace3();
+			
+			[Bindable]
+			private var animal:Zanimal3=new Zanimal3();
+			
+			[Bindable]
+			private var pose:Zpose3=new Zpose3();
+			
+			private var canvas:Zanimal3Canvas=new Zanimal3Canvas();
+			
+			protected function lsRaceName_changeHandler(event:Event):void
+			{
+				race.name=lsRaceName.string;
+			}
+			
+			protected function btnSeal_clickHandler(event:MouseEvent):void
+			{
+				if(race.isReady){
+					race.sealed=true;
+					animal.race=race;					
+				}
+			}
+			
+			public function activate(ec:EditorCanvas3):void
+			{
+				canvas.activate(ec);
+//				this.ec=ec;
+//				
+//				actor=new ZebraC3(ec.space);
+//				
+//				rotator=new RotaterG5(actor);
+//				ec.space.addGesture(rotator);
+			}
+			
+			public function deactivate():void{
+				canvas.deactivate();
+//				actor.zbox.dispose();
+//				ec.space.removeGesture(rotator);
+			}
+			
+//			public function activate(on):void{
+//				if(on){
+//					canvas=new LayerZebra(G2dEngine.singleton().singleLayer);
+//				}else{
+//					canvas.dispose();
+//				}
+//			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+//				var data:ZintBuffer=animal.toBytes();
+//				data.compress();
+//				
+//				var master:String=MC5.hash(data);
+//				Gallerid.singleton().cacheMem(master,data);
+//				
+//				var list:Vector.<String>=new Vector.<String>();
+//				list.push(master);
+//				for each(var mc5:String in animal.getMc5List()){
+//					list.push(mc5);
+//				}
+//				GalleridWriter.write(name,list);
+				
+//				var name:String=animal.name+'.zanimal';
+				var data:ByteArray=animal.toBytes();
+				data.compress();
+				
+				var gp:GalPack4=new GalPack4();
+				gp.setMaster(data);
+				gp.addSlaveList(animal.getMe5List());
+				
+				gp.saveToFile('.zanimal');
+			}
+			
+			protected function lsAnimalName_changeHandler(event:Event):void
+			{
+				animal.name=lsAnimalName.string;
+			}
+			
+			protected function listPose_MOVEHandler(event:Event):void
+			{
+				if(!race.sealed)
+					return;
+				
+				var z:Zebra3=animal.getZebraByIdx(listPose.idx);
+				canvas.showZebra(z);
+			}
+			
+			protected function listPose_ADDHandler(event:Event):void
+			{
+				var zd:Zpose3=new Zpose3();
+				race.danceList.splice(listPose.idx+1,0,zd);
+				listPose.insert(zd);
+			}
+			
+			protected function listPose_DELETEHandler(event:Event):void
+			{
+				race.danceList.splice(listPose.idx,1);
+			}
+			
+			protected function fbPose_READYHandler(event:Event):void
+			{
+//				var newPack:GsFile=new GsFile(fbPose.file);
+//				Gallerid.singleton().cacheMemFromPack(fbPose.file);
+//				var item:GalMail=Gallerid.singleton().getData(newPack.master);
+				
+				var master:String=new GalPack4().loadFrom(fbPose.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				var current:Zebra3=animal.getZebraByIdx(listPose.idx);
+				current.fromBytes(data);
+				
+				canvas.showZebra(current);
+			}
+			
+			protected function fbAnimal_READYHandler(event:Event):void
+			{
+//				var master:String=Gallerid.singleton().cacheMemFromPack(fbAnimal.file);
+//				
+//				var item:GalMail=Gallerid.singleton().getData(master);
+//				var data:ZintBuffer=item.dataClone();
+				var master:String=new GalPack4().loadFrom(fbAnimal.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				animal.fromBytes(data);
+				race=animal.race;
+				
+				listPose.clear();
+				for (var i:int =0;i<race.danceList.length;i++){
+					
+					var dc:Zpose3=race.danceList[i];
+					
+					var shell:ZebraShell3=new ZebraShell3();
+					shell.zebra=animal.zebraList[i];
+					shell.name=dc.name;
+					
+					listPose.insert(shell);
+				}
+				
+				listPose.idx=0;
+			}
+			
+			protected function fbClear_clickHandler(event:MouseEvent):void
+			{
+				race.clear();
+				animal.clear();
+				pose.clear();
+//				canvas.clear();
+				listPose.clear();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup x="10" y="50" width="150" horizontalAlign="center" mouseDown="event.stopPropagation()"
+			  mouseUp="event.stopPropagation()">
+		<s:VGroup width="100%" horizontalAlign="center">
+			<s:HGroup>
+			<file:FileButton6 id="fbAnimal" label="读取" _ext="*.zanimal"
+							  READY="fbAnimal_READYHandler(event)"/> 
+				<s:Button id="fbClear" label="清空" click="fbClear_clickHandler(event)"/>
+			</s:HGroup>
+			<s:Group width="100%" height="30"/>
+			<label:LabelString2 id="lsRaceName" label="种族名=" change="lsRaceName_changeHandler(event)"
+								color="0xffffff" enabled="{!race.sealed}" string="{race.name}"/>
+			<list:ListEditor id="listPose" label="动作" ADD="listPose_ADDHandler(event)"
+							 DELETE="listPose_DELETEHandler(event)" editable="{!race.sealed}"
+							 MOVE="listPose_MOVEHandler(event)">
+			</list:ListEditor>
+		</s:VGroup>
+		<s:Button id="btnSeal" label="封" click="btnSeal_clickHandler(event)" enabled="{!race.sealed}"/>
+		<s:Group width="100%" height="30"/>
+		<s:VGroup enabled="{race.sealed}" horizontalAlign="center">
+			<label:LabelString2 id="lsAnimalName" label="动物名="
+								change="lsAnimalName_changeHandler(event)" color="0xffffff"
+								string="{animal.name}"/>
+			<s:HGroup>
+				<file:FileButton6 id="fbPose" label="加载动作" _ext="*.zebra"
+								  READY="fbPose_READYHandler(event)"/>
+				<s:Button id="btnSave" label="保存" click="btnSave_clickHandler(event)"/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:VGroup>
+	<!--<s:HGroup bottom="10" horizontalCenter="0" mouseDown="event.stopPropagation()"
+	mouseUp="event.stopPropagation()">
+	<s:Button label="-" click="layer.zUp++"/>
+	<s:Button label="+" click="layer.zUp-"/>
+	</s:HGroup>-->
+</s:Group>

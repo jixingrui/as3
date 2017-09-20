@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				height="30" autoDrawBackground="true" click="itemrenderer1_clickHandler(event)"
+				currentState="display" doubleClick="itemrenderer1_doubleClickHandler(event)"
+				doubleClickEnabled="false" focusOut="currentState='display'"
+				mouseOut="itemrenderer1_mouseOutHandler(event)"
+				rightClick="itemrenderer1_rightClickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.helios.drass9.DrassNode;
+			import azura.helios.drass9.e.DrassEvent;
+			
+			import mx.controls.ToolTip;
+			import mx.events.FlexEvent;
+			import mx.managers.ToolTipManager;
+			
+			private static var tt:ToolTip;
+			
+			[Bindable]
+			private var item:DrassNode;
+			
+			override public function set data(value:Object):void{				
+				item=value as DrassNode;
+				if(item!=null)
+					displayState();
+			}
+			
+			private function displayState():void{
+				if(item.numChildren>0)
+					currentState="displayPlus";
+				else
+					currentState="display";
+			}
+			
+			override public function get data():Object{
+				return item;
+			}
+			
+			public function edit():void{				
+				currentState='edit';
+				tiEdit.text = item.name;
+				tiEdit.selectRange(tiEdit.text.length,tiEdit.text.length+1);
+				tiEdit.setFocus();
+			}			
+			
+			protected function tiEdit_enterHandler(event:FlexEvent):void
+			{
+				if (item.name != tiEdit.text)
+				{
+					var e:DrassEvent=new DrassEvent(DrassEvent.Rename);
+					e.newName=tiEdit.text;
+					dispatchEvent(e);
+				}			
+				
+				displayState();
+			}
+			
+			protected function itemrenderer1_mouseOutHandler(event:MouseEvent):void
+			{
+				clearToolTip();
+			}
+			
+			protected function itemrenderer1_clickHandler(event:MouseEvent):void
+			{
+				clearToolTip();
+				
+				if(item.name.length>4){
+					tt=ToolTipManager.createToolTip(item.name,event.stageX+5,event.stageY-5,null,this) as ToolTip;
+					tt.setStyle("backgroundColor",0xe26e10);
+					tt.setStyle("backgroundAlpha",0.7);
+					//					tt.setStyle("fontSize",24);
+					tt.scaleX=2;
+					tt.scaleY=2;
+				}
+			}
+			
+			private function clearToolTip():void{
+				if(tt!=null)
+					ToolTipManager.destroyToolTip(tt);
+				tt=null;
+			}
+			
+			protected function tiEdit_keyUpHandler(event:KeyboardEvent):void
+			{
+				if(event.keyCode==Keyboard.ESCAPE)
+					displayState();
+			}
+			
+			protected function edit_exitStateHandler(event:FlexEvent):void
+			{
+				dispatchEvent(new DrassEvent(DrassEvent.RenameComplete));
+			}
+			
+			protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new DrassEvent(DrassEvent.Jump));
+				// TODO Auto-generated method stub
+				//				trace("ir: double click");
+				//				IEventDispatcher(parentDocument).dispatchEvent(new MouseEvent(MouseEvent.DOUBLE_CLICK));
+			}
+			
+			protected function itemrenderer1_rightClickHandler(event:MouseEvent):void
+			{
+				var de:DrassEvent=new DrassEvent(DrassEvent.Jump);
+				de.item=this.item;
+				dispatchEvent(de);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="display"/>
+		<s:State name="displayPlus"/>
+		<s:State exitState="edit_exitStateHandler(event)" name="edit"/>		
+	</s:states>	
+	<s:HGroup width="100%" height="100%" gap="0">
+		<s:Group includeIn="displayPlus" height="100%">
+			<s:Label id="lbPlus" x="0" fontSize="18" maxDisplayedLines="1" text="+"
+					 verticalCenter="0"/>
+		</s:Group>
+		<s:Group includeIn="display,displayPlus" height="100%">
+			<s:Label id="lbDisplay" x="0" fontSize="28" maxDisplayedLines="1" text="{item.name}"
+					 verticalCenter="0"/>
+		</s:Group>
+		<s:TextInput id="tiEdit" includeIn="edit" left="1" right="0" top="1" bottom="1" height="28"
+					 minWidth="25" enter="tiEdit_enterHandler(event)"
+					 keyUp="tiEdit_keyUpHandler(event)" mouseChildren="false"/>
+	</s:HGroup>	
+</s:ItemRenderer>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:ui="azura.common.ui.*"
+				   implements="azura.common.collections.BytesI" xmlns:label="azura.common.ui.label.*" >
+	<fx:Script>
+		<![CDATA[
+			import azura.common.ui.list.ListItemI;
+			import azura.common.collections.BytesI;
+			import azura.common.collections.ZintBuffer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.IList;
+			[Bindable]
+			private var list:IList=new ArrayCollection();
+			public var reader:ListItemI;
+			private var _idx:int=-1;
+			
+			[Bindable]
+			public var label:String="label";
+			
+			[Bindable]
+			public function get idx():int
+			{
+				return _idx;
+			}
+			
+			private function set idx(value:int):void
+			{
+				if(list.length>0){
+					value=Math.max(0,value);
+				}else{
+					value=Math.max(-1,value);
+				}
+				value=Math.min(list.length-1,value);
+				if(_idx!=value){
+					_idx=value;
+				}
+				if(value<0){
+					reader.clear();
+				}else{
+					var itemValue:ZintBuffer=list[_idx] as ZintBuffer;
+					itemValue.position=0;
+					reader.fromBytes(itemValue);
+				}
+			}
+			
+			protected function btnLeft_clickHandler(event:MouseEvent):void
+			{
+				idx--;
+			}
+			
+			protected function btnRight_clickHandler(event:MouseEvent):void
+			{
+				idx++;	
+			}
+			
+			protected function btnDelete_clickHandler(event:MouseEvent):void
+			{
+				list.removeItemAt(idx);
+				idx--;
+			}
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				reader.clear();
+				var zb:ZintBuffer=reader.toBytes();
+				list.addItemAt(zb,idx+1);
+				idx++;
+			}
+			
+			public function save():void{
+				var zb:ZintBuffer=reader.toBytes();
+				list.setItemAt(zb,idx);
+			}
+			
+			public function fromBytes(zb:ZintBuffer):void
+			{
+				list.removeAll();
+				var length:int=zb.readZint();
+				for(var i:int=0;i<length;i++){
+					list.addItem(zb.readBytesZ());
+				}
+			}
+			
+			public function toBytes():ZintBuffer
+			{
+				var zb:ZintBuffer=new ZintBuffer();
+				zb.writeZint(list.length);
+				for each(var item:ZintBuffer in list){
+					zb.writeBytesZ(item);
+				}
+				return zb;
+			}
+			
+			public function clear():void{
+				list.removeAll();
+			}
+		]]>	
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup horizontalAlign="center">
+		<s:Label text="{label}"/>
+		<s:HGroup verticalAlign="contentJustify">
+			<s:Button id="btnLeft" width="40" label="&lt;-" click="btnLeft_clickHandler(event)"
+					  enabled="{idx&gt;0}"/>
+			<s:Label id="lbCurrent" text="{idx+1}/{list.length}" verticalAlign="middle"/>
+			<s:Button id="btnRight" width="40" label="-&gt;" click="btnRight_clickHandler(event)"
+					  enabled="{idx&lt;list.length-1}"/>
+		</s:HGroup>
+		<s:HGroup>
+			<s:Button id="btnAdd" width="60" label="add" click="btnAdd_clickHandler(event)"/>
+			<s:Button id="btnDelete" width="60" label="delete" click="btnDelete_clickHandler(event)"
+					  enabled="{list.length&gt;0}"/>
+		</s:HGroup>
+		<label:LabelString2 label="name" string="">
+		</label:LabelString2>
+	</s:VGroup>
+</s:BorderContainer>

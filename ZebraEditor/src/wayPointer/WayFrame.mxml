@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui="azura.common.ui.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.Stage3DRoot;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.g2d.LoaderInitializer;
+			import azura.avalon.zbase.zway.WayFinder;
+			import azura.common.algorithm.FoldIndex;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.gallerid3.source.GsFile;
+			
+			import mx.events.FlexEvent;
+			
+			private var mapName:String;
+			[Bindable]
+			private var canvas:LayerWayPointer;
+			
+			private var packZforest:GsFile;
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.scaleLocal*=1.2;
+				snap();
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.scaleLocal*=0.8;
+				snap();
+			}
+			
+			private function snap():void{
+				if(Math.abs(canvas.root.scaleLocal-1)<0.1)
+					canvas.root.scaleLocal=1;
+				
+				var z:int=Math.max(canvas.zforest.mask.zMax,canvas.zforest.base.zMax,2);
+				var min:Number=1/FoldIndex.sideLength(z-2);
+				var max:Number=1.5;
+				if(canvas.root.scaleLocal<min)
+					canvas.root.scaleLocal=min;
+				if(canvas.root.scaleLocal>max)
+					canvas.root.scaleLocal=max;
+			}
+			
+			protected function fbZforest_READYHandler(event:Event):void
+			{
+				canvas.clear();
+				
+				mapName=fbZforest.file.name;
+				mapName=FileUtil.getNoExt(mapName);
+				
+				packZforest=new GsFile(fbZforest.file);				
+				var data:ZintBuffer=packZforest.getMaster();
+				data.uncompress();
+				canvas.zforest.fromBytes(data);
+				
+				canvas.wayFinder=new WayFinder(canvas.zforest.way,canvas.zforest.zbaseScale);
+				
+				checkDisplay();
+				canvas.root.lookAt(0,0);
+			}
+			
+			private function checkDisplay():void{
+				canvas.zforestNode.zforest=canvas.zforest;
+				canvas.showTrees();
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				LoaderInitializer.singleton();
+			}
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Stage3DRoot.singleton().init(stage,holder,onInit);
+				function onInit():void{
+					canvas=new LayerWayPointer(G2dEngine.singleton().singleLayer);
+				}
+			}
+			
+			protected function btnStart_clickHandler(event:MouseEvent):void
+			{
+				canvas.mouseMode=LayerWayPointer.MOUSEPATH;
+				canvas.clearWays();
+//				canvas.wayLayer.clear();
+			}
+			
+			protected function btnEnd_clickHandler(event:MouseEvent):void
+			{
+				canvas.mouseMode=LayerWayPointer.MOUSEPATH;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:SpriteVisualElement id="holder"/>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+	<s:HGroup top="10" horizontalCenter="0">
+		<file:FileButton6 id="fbZforest" label="load .zforest" _ext="*.zforest"
+						  READY="fbZforest_READYHandler(event)"/>
+		<s:Button id="btnStart" label="起点" click="btnStart_clickHandler(event)"
+				  enabled="{canvas.mousePath.start_end}"/>
+		<s:Button id="btnEnd" label="终点" click="btnEnd_clickHandler(event)"
+				  enabled="{!canvas.mousePath.start_end}"/>
+	</s:HGroup>
+</s:Group>

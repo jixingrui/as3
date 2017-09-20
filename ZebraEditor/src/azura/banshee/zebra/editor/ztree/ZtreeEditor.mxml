@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*" implements="azura.banshee.zebra.editor.PageI" 
+		 xmlns:ui="azura.common.ui.*"
+		 width="100%" height="100%" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.zforest.Ztree;
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.zebra.Zebra;
+			import azura.common.algorithm.crypto.MC5Old;
+			import azura.common.collections.BitSet;
+			import azura.common.collections.LBSet;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			import mx.events.FlexEvent;
+			
+			private var layer:LayerZtreeEdit;
+			
+			public function activate(on:Boolean):void{
+				if(on){
+					layer=new LayerZtreeEdit(G2dEngine.singleton().singleLayer);
+				}else{
+					layer.dispose();
+				}
+			}
+			
+			protected function fbZebra_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZebra.file);				
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				var zebra:Zebra=new Zebra();
+				zebra.fromBytes(data);
+				layer.ztree=new Ztree();
+				layer.loadZebra(zebra);
+			}
+			
+			protected function radiogroup1_changeHandler(event:Event):void
+			{
+				layer.mode=radiogroup1.selectedIndex;
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				var ztree:Ztree=layer.save();
+				var data:ZintBuffer=ztree.toBytes();
+				data.compress();
+				
+				var gp:GalPack4=new GalPack4();
+				gp.setMaster(data);
+				gp.addSlaveList(ztree.zebra.getMe5List());
+				
+				gp.saveToFile(".ztree");
+			}
+			
+			protected function tbHide_changeHandler(event:Event):void
+			{
+				layer.actor.visible=!tbHide.selected;
+			}
+			
+			protected function lnThick_changeHandler(event:Event):void
+			{
+				layer.penThick=lnThick.number;
+			}
+			
+			protected function fbZtree_READYHandler(event:Event):void
+			{
+				var master:String=new GalPack4().loadFrom(fbZtree.file);				
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				layer.loadZitem(data);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup1" change="radiogroup1_changeHandler(event)"/>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup x="10" y="50" horizontalAlign="center">
+		<file:FileButton6 label="load .ztree" _ext="*.ztree" id="fbZtree" READY="fbZtree_READYHandler(event)"/>
+		<s:Button label="save .ztree" id="btnSave" click="btnSave_clickHandler(event)"/>
+	</s:VGroup>
+	<s:VGroup x="10" y="170">
+		<file:FileButton6 label="load .zebra" id="fbZebra" _ext="*.zebra" READY="fbZebra_READYHandler(event)"/>
+		<s:ToggleButton id="tbHide" change="tbHide_changeHandler(event)" label="hide"/>
+		<label:LabelNumber2 label="thick" color="0xffffff" number="8" id="lnThick" change="lnThick_changeHandler(event)"/>
+	</s:VGroup>
+	<s:VGroup x="10" y="250" mouseMove="event.stopImmediatePropagation()" mouseDown="event.stopImmediatePropagation()">
+		<s:RadioButton label="look" groupName="radiogroup1" selected="true" color="0xffffff" fontSize="18"/>
+		<s:RadioButton label="painter" groupName="radiogroup1" color="0xffffff" fontSize="18"/>
+		<s:RadioButton label="eraser" groupName="radiogroup1" color="0xffffff" fontSize="18"/>
+		<s:RadioButton label="set root" groupName="radiogroup1" color="0xffffff" fontSize="18"/>
+	</s:VGroup>
+</s:Group>

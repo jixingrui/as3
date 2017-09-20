@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:run="azura.karma.run.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:editor="azura.karma.editor.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_karma;
+			
+			import azura.banshee.engine.Statics;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.FileUtil;
+			import azura.karma.reader.FieldReader;
+			import azura.karma.reader.ForkReader;
+			import azura.karma.reader.KarmaReader;
+			import azura.karma.service.KarmaNet;
+			
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.components.Alert;
+			
+			private var net_:KarmaNet;
+			
+			public static var this_:KarmaPanel;
+			
+			[Bindable]
+			public var karmaReader:KarmaReader;
+			[Bindable]
+			public var fieldReader:FieldReader;
+			[Bindable]
+			public var forkReader:ForkReader;
+			
+			[Bindable]
+			public var hasFocus:Boolean;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				Statics.stage=stage;
+				this_=this;
+				karmaReader=new KarmaReader(this);
+				fieldReader=new FieldReader(this);
+				forkReader=new ForkReader(this);
+				
+				var config:Config_karma=new Config_karma();
+				config.onReady.add(onReady);
+				function onReady():void{
+					net_=new KarmaNet(config);
+					net_.onConnected.add(connected);
+					net_.connect();
+				}
+			}
+			
+			private function connected():void{
+				KarmaNet.cs.hub.register(hdKarma);
+				KarmaNet.cs.hub.register(hdField);
+				KarmaNet.cs.hub.register(hdFork);
+			}
+			
+			protected function btnWipe_clickHandler(event:MouseEvent):void
+			{
+				clearOne();
+				hdKarma.clearAll();
+				KarmaNet.cs.wipe();
+			}
+			
+			protected function btnSelected_clickHandler(event:MouseEvent):void
+			{
+				KarmaNet.cs.select();
+			}
+			
+			protected function hdFork_ADDHandler(event:Event):void
+			{
+				KarmaNet.cs.addFork();
+			}
+			
+			protected function hdKarma_RENAMEHandler(event:Event):void
+			{
+				clearOne();
+			}
+			
+			private function clearOne():void{
+				btnSelected.label="";
+				hdField.clearAll();
+				hdFork.clearAll();
+			}
+			
+			protected function btnSave_clickHandler(event:MouseEvent):void
+			{
+				KarmaNet.cs.save(saveFile);
+			}
+			
+			private function saveFile(data:ZintBuffer):void{
+				
+				var box:Alert=Alert.show("保存karma文件", "",  Alert.OK, null, closeHandler);
+				PopUpManager.centerPopUp(box);
+				function closeHandler( event:CloseEvent ):void
+				{							
+					if ( event.detail == Alert.OK )
+					{
+						new File().save(data,hdKarma.selectedItem.name+".zip");
+					}
+				}
+			}
+			
+			protected function fbKarma_READYHandler(event:Event):void
+			{
+				var data:ZintBuffer=FileUtil.read(fbKarma.file);
+				KarmaNet.cs.load(data);
+			}
+			
+			protected function btnJava_clickHandler(event:MouseEvent):void
+			{
+				KarmaNet.cs.java(saveJava);
+			}
+			
+			private function saveJava(data:ZintBuffer):void{
+				
+				var box:Alert=Alert.show("保存java代码", "",  Alert.OK, null, closeHandler);
+				PopUpManager.centerPopUp(box);
+				function closeHandler( event:CloseEvent ):void
+				{							
+					if ( event.detail == Alert.OK )
+					{
+						new File().save(data,hdKarma.selectedItem.name+"Java.zip");
+					}
+				}
+			}
+			
+			protected function btnAs_clickHandler(event:MouseEvent):void
+			{
+				KarmaNet.cs.as3(saveAs);
+			}
+			
+			private function saveAs(data:ZintBuffer):void{
+				
+				var box:Alert=Alert.show("保存as代码", "",  Alert.OK, null, closeHandler);
+				PopUpManager.centerPopUp(box);
+				function closeHandler( event:CloseEvent ):void
+				{							
+					if ( event.detail == Alert.OK )
+					{
+						new File().save(data,hdKarma.selectedItem.name+"As.zip");
+					}
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%" height="100%">
+		<s:VGroup height="100%">
+			<s:Button id="btnSelected" width="100%" label="" click="btnSelected_clickHandler(event)"
+					  enabled="{hdKarma.selectedItem!=null}" fontSize="30"/>
+			<s:HGroup width="100%" height="100%" enabled="{hasFocus}">
+				<ui:Hard10UI id="hdField" width="200" height="100%" reader="{fieldReader}"
+							 title="Field"/>
+				<s:HGroup width="100%" height="100%" enabled="{hdField.selectedItem!=null}">
+					<s:VGroup height="100%" color="0xffffff">
+						<editor:KarmaTypeBox id="typeBox" CHANGE="hdField.save()"/>
+						<s:TextArea id="taFieldNote" width="250" height="100%"
+									change="hdField.save()" color="0x0"/>
+					</s:VGroup>
+					<s:HGroup width="100%" height="100%"
+							  enabled="{typeBox.rbKarma.selected||typeBox.rbList.selected}">
+						<ui:Hard10UI id="hdFork" width="200" height="100%"
+									 ADD="hdFork_ADDHandler(event)" reader="{forkReader}"
+									 title="Fork"/>
+						<s:TextArea id="taForkNote" width="250" height="100%" change="hdFork.save()"
+									enabled="{hdFork.selectedItem!=null}"/>
+					</s:HGroup>
+				</s:HGroup>
+			</s:HGroup>
+		</s:VGroup>
+		<s:HGroup width="100%" height="100%">
+			<ui:Hard10UI id="hdKarma" width="200" height="100%" reader="{karmaReader}"
+						 RENAME="hdKarma_RENAMEHandler(event)" title="Karma"/>
+			<s:VGroup width="100%" height="100%">
+				<s:VGroup width="100%" horizontalAlign="center">
+					<s:HGroup width="100%" horizontalAlign="center">
+						<s:Button id="btnSave" label="save" click="btnSave_clickHandler(event)"
+								  enabled="{hdKarma.selectedItem!=null}"/>
+						<file:FileButton6 id="fbKarma" label="load .k2" _ext="*.k2"
+										  enabled="{hdKarma.selectedItem==null}"
+										  READY="fbKarma_READYHandler(event)"/>
+					<s:Button id="btnWipe"
+							  visible="{hdKarma.selectedItem==null &amp;&amp; hdKarma.upEmpty==true}"
+							  label="wipe" click="btnWipe_clickHandler(event)"/>
+					</s:HGroup>
+<!--					<s:HGroup width="100%" horizontalAlign="center">
+						<s:Button id="btnJava" label="java" click="btnJava_clickHandler(event)"
+								  enabled="{hdKarma.selectedItem!=null}"/>
+						<s:Button id="btnAs" label="as3" click="btnAs_clickHandler(event)"
+								  enabled="{hdKarma.selectedItem!=null}"/>
+					</s:HGroup>-->
+				</s:VGroup>
+				<s:TextArea id="taKarmaNote" width="100%" height="100%" change="hdKarma.save()"
+							enabled="{hdKarma.selectedItem!=null}"/>
+			</s:VGroup>
+		</s:HGroup>
+	</s:HGroup>
+</s:Group>

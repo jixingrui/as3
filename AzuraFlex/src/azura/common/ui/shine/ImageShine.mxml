@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Image xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 click="image1_clickHandler(event)" mouseDown="image1_mouseDownHandler(event)"
+		 mouseMove="image1_mouseMoveHandler(event)" mouseUp="event.stopPropagation()"
+		 scaleMode="letterbox" smooth="true" smoothingQuality="high">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.common.util.OS;
+			
+			private var timerShine:Timer;
+			private var timerCycle:Timer;
+			private static var timerFreeze:Timer;
+			private var clickLock:Boolean=true;
+			
+			[Bindable]
+			public var clickable:Boolean=true;
+			
+			protected function image1_mouseDownHandler(event:MouseEvent):void
+			{
+//				event.stopPropagation();
+				if(OS.isPc){
+					shine();
+				}
+			}
+			
+			protected function image1_mouseMoveHandler(event:MouseEvent):void
+			{
+//				event.stopPropagation();
+				if(OS.isAndroid){
+					shine();
+				}
+			}
+			
+			public function shine(cycle:Boolean=false):void{
+				if(!clickable||timerFreeze!=null)
+					return;
+				
+				if(timerCycle!=null){
+					timerCycle.removeEventListener(TimerEvent.TIMER,onCycle);
+					timerCycle.stop();
+					timerCycle=null;
+				}
+				
+				if(cycle && timerCycle==null){
+					
+					fadeSlow.target=this;
+					fadeSlow.play();
+					
+					timerCycle=new Timer(1000,0);
+					timerCycle.addEventListener(TimerEvent.TIMER,onCycle);
+					timerCycle.start();
+				}else{
+					
+					fade.target=this;
+					fade.play();
+					
+					timerShine=new Timer(500,1);
+					timerShine.addEventListener(TimerEvent.TIMER_COMPLETE,onClick);
+					timerShine.start();
+					
+					timerFreeze=new Timer(1000,1);
+					timerFreeze.addEventListener(TimerEvent.TIMER_COMPLETE,onUnfreeze);
+					timerFreeze.start();
+				}				
+			}
+			
+			private function onCycle(te:TimerEvent):void{
+				fadeSlow.target=this;
+				fadeSlow.play();
+			}
+			
+			private function onClick(event:TimerEvent):void{
+				
+				timerShine.removeEventListener(TimerEvent.TIMER_COMPLETE,onClick);
+				timerShine.stop();
+				timerShine=null;
+				
+				clickLock=false;
+				dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+			}
+			
+			private function onUnfreeze(event:TimerEvent):void{
+				timerFreeze.removeEventListener(TimerEvent.TIMER_COMPLETE,onUnfreeze);
+				timerFreeze.stop();
+				timerFreeze=null;
+			}
+			
+			protected function image1_clickHandler(event:MouseEvent):void
+			{
+				if(clickLock){
+					event.stopImmediatePropagation();					
+					return;
+				}
+				
+				clickLock=true;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Sequence id="fade" duration="150">
+			<s:Fade alphaFrom="1.0" alphaTo="0.3"/>
+			<s:Fade alphaFrom="0.3" alphaTo="1.0"/>
+		</s:Sequence>   
+		<s:Sequence id="fadeSlow" duration="300">
+			<s:Fade alphaFrom="1.0" alphaTo="0.3"/>
+			<s:Fade alphaFrom="0.3" alphaTo="1.0"/>
+		</s:Sequence>   
+	</fx:Declarations>
+</s:Image>

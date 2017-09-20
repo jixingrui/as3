@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   xmlns:ui="azura.common.ui.*"
+				   xmlns:label="azura.common.ui.label.*"
+				   width="140" mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.collections.NameI;
+			
+			[Bindable]
+			public var list:Vector.<NameI>=new Vector.<NameI>();
+			private var _idx:int=-1;
+			
+			[Bindable]
+			private var length:int=0;
+			
+			[Bindable]
+			public var editable:Boolean=true;
+			
+			[Bindable]
+			public var nameable:Boolean=true;
+			
+			[Bindable]
+			public var label:String="label";
+			
+			
+			[Bindable]
+			public function get idx():int
+			{
+				return _idx;
+			}
+			
+			public function set idx(value:int):void
+			{
+				if(list.length>0){
+					_idx=Math.max(0,value);
+				}else{
+					_idx=-1;
+				}
+				if(current!=null){
+					lsName.string=current.name;
+					dispatchEvent(new Event("MOVE"));
+				}else{
+					lsName.string='';
+				}
+			}
+			
+			public function get current():NameI{
+				if(idx>=0)
+					return list[idx];
+				else
+					return null;
+			}
+			
+			protected function btnLeft_clickHandler(event:MouseEvent):void
+			{
+				idx--;
+			}
+			
+			protected function btnRight_clickHandler(event:MouseEvent):void
+			{
+				idx++;	
+			}
+			
+			protected function btnDelete_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("DELETE"));
+				length--;
+				list.removeAt(idx);
+				idx--;
+			}
+			
+			protected function btnAdd_clickHandler(event:MouseEvent):void
+			{
+				dispatchEvent(new Event("ADD")); 
+			}
+			
+			public function insert(item:NameI):void{
+				length++;
+				list.insertAt(idx+1,item);
+				idx++;
+				if(item.name==null||item.name.length==0){
+					item.name="item"+list.length;
+					lsName.string=item.name;					
+				}
+			}
+			
+			protected function lsName_changeHandler(event:Event):void
+			{
+				current.name=lsName.string;
+				lsName.string=current.name;
+				dispatchEvent(new Event("RENAME"));
+			}
+			
+			public function clear():void{
+				list=new Vector.<NameI>();
+				length=0;
+				idx=-1;
+				name='';
+			}
+			
+		]]>	
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="MOVE", type="flash.events.Event")]
+		[Event(name="ADD", type="flash.events.Event")]
+		[Event(name="DELETE", type="flash.events.Event")]
+		[Event(name="RENAME", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:VGroup width="100%" horizontalAlign="center">
+		<s:HGroup verticalAlign="contentJustify">
+			<s:Button id="btnLeft" width="40" label="&lt;-" click="btnLeft_clickHandler(event)"
+					  enabled="{idx&gt;0}"/>
+			<s:Label id="lbCurrent" text="{idx+1}/{length}" verticalAlign="middle"/>
+			<s:Button id="btnRight" width="40" label="-&gt;" click="btnRight_clickHandler(event)"
+					  enabled="{idx&lt;length-1}"/>
+		</s:HGroup>
+		<s:HGroup enabled="{editable}">
+			<s:Button id="btnAdd" width="60" label="add" click="btnAdd_clickHandler(event)"/>
+			<s:Button id="btnDelete" width="60" label="delete" click="btnDelete_clickHandler(event)"
+					  enabled="{idx&gt;=0}"/>
+		</s:HGroup>
+		<label:LabelString2 id="lsName" label="{label}" change="lsName_changeHandler(event)"
+							enabled="{nameable &amp;&amp; editable &amp;&amp; idx&gt;=0}">
+		</label:LabelString2>
+	</s:VGroup>
+</s:BorderContainer>

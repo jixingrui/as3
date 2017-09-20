@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:shine="azura.common.ui.shine.*"
+				autoDrawBackground="false"
+				creationComplete="itemrenderer1_creationCompleteHandler(event)" currentState="text">
+	<fx:Script>
+		<![CDATA[
+			import azura.common.algorithm.FastMath;
+			import azura.common.algorithm.crypto.CRC32;
+			import azura.common.util.ByteUtil;
+			
+			import com.hurlant.math.bi_internal;
+			
+			import flash.filters.GlowFilter;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var msg:Msg;
+			
+			[Bindable]
+			private var hashColor:int;
+			
+			[Bindable]
+			private var time:String;
+			
+			private static var outline:GlowFilter=new GlowFilter(0xffffff,1,2,2,6);
+			
+			override public function set data(o:Object):void{
+				this.msg=o as Msg;
+				
+				if(msg==null)
+					return;
+				
+				hashColor=FastMath.hashColor(msg.name);
+				
+				if(msg.text_voice){
+					currentState="text";
+				}else{
+					currentState="voice";
+					var d:Date=new Date();
+					time=d.hours+":"+d.minutes+":"+d.seconds;
+				}
+				
+			}
+			
+			
+			[Bindable]
+			private var outlineFilter:Array;
+			protected function itemrenderer1_creationCompleteHandler(event:FlexEvent):void
+			{
+				outlineFilter=[outline];
+				//				if(Platform.isAndroid){
+				//					var fs:int=24;
+				//					var factor:int=1;
+				//					if(Capabilities.screenDPI>200){
+				//						factor=2;
+				//					}
+				//					if(currentState=="text")
+				//						lbText.setStyle("fontSize",fs*factor);
+				//					else{
+				//						lbVoice.setStyle("fontSize",fs*factor);
+				//						imgListen.scaleX=factor;
+				//						imgListen.scaleY=factor;
+				//					}
+				//				}
+			}
+			
+			protected function imgListen_mouseDownHandler(event:MouseEvent):void
+			{
+				var me:MsgEvent=new MsgEvent(MsgEvent.VOICE);
+				me.mc5=msg.mc5;
+				dispatchEvent(me);
+				//				trace("event dispatched");
+				
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="text"/>
+		<s:State name="voice"/>
+	</s:states>
+	<s:Label id="lbText" includeIn="text" color="{hashColor}" filters="{outlineFilter}"
+			 lineBreak="toFit" maxDisplayedLines="4" text="{msg.name}:  {msg.text}"/>
+	<s:HGroup includeIn="voice" height="100%" mouseDown="event.stopPropagation()"
+			  mouseUp="event.stopPropagation()">
+		<s:Group height="100%">
+			<s:Label id="lbName" color="{hashColor}" filters="{outlineFilter}" text="{msg.name}:"
+					 verticalCenter="0"/>
+		</s:Group>
+		<shine:ImageShine id="imgListen" visible="{!msg.text_voice}" width="48" height="48"
+						  mouseDown="imgListen_mouseDownHandler(event)" smooth="true"
+						  smoothingQuality="high" source="@Embed('assets/game_listen.png')"/>
+		<s:Group height="100%">
+			<s:Label id="lbTime" color="{hashColor}" filters="{outlineFilter}" text="{time}"
+					  verticalCenter="0"/>
+		</s:Group>
+	</s:HGroup>
+	
+</s:ItemRenderer>

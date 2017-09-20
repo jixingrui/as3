@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:List xmlns:fx="http://ns.adobe.com/mxml/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		click="this.setFocus()" horizontalScrollPolicy="off"
+		itemRenderer="azura.helios.drass9.ui.EditableRenderer"
+		skinClass="azura.helios.drass9.ui.DrassListSkin">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata> 
+		[Event(name="_Rename", type="azura.helios.drass9.e.DrassEvent")] 
+		[Event(name="_RenameComplete", type="azura.helios.drass9.e.DrassEvent")]
+		[Event(name="_Jump", type="azura.helios.drass9.e.DrassEvent")]
+	</fx:Metadata> 
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="justify"/>
+	</s:layout>
+</s:List>

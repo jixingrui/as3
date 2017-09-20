@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%" color="0x0" enabled="{rbEmpty.selected}">
+	<fx:Script>
+		<![CDATA[
+			import azura.karma.run.bean.BeanTypeE;
+			
+			import mx.events.ItemClickEvent;
+			
+			private var _type:int;
+			
+			public function get type():int
+			{
+				return _type;
+			}
+			
+			public function set type(value:int):void
+			{
+				_type = value;
+				if(value==BeanTypeE.BOOLEAN)
+					rbBool.selected=true;
+				else if(value==BeanTypeE.INT)
+					rbInt.selected=true;
+				else if(value==BeanTypeE.DOUBLE)
+					rbDouble.selected=true;
+				else if(value==BeanTypeE.STRING)
+					rbString.selected=true;
+				else if(value==BeanTypeE.BYTES)
+					rbBytes.selected=true;
+				else if(value==BeanTypeE.KARMA)
+					rbKarma.selected=true;
+				else if(value==BeanTypeE.LIST)
+					rbList.selected=true;
+				else if(value==BeanTypeE.EMPTY)
+					rbEmpty.selected=true;
+			}
+			
+			protected function rbType_itemClickHandler(event:ItemClickEvent):void
+			{
+				if(rbBool.selected)
+					type=BeanTypeE.BOOLEAN;
+				else if(rbInt.selected)
+					type=BeanTypeE.INT;
+				else if(rbDouble.selected)
+					type=BeanTypeE.DOUBLE;
+				else if(rbString.selected)
+					type=BeanTypeE.STRING;
+				else if(rbBytes.selected)
+					type=BeanTypeE.BYTES;
+				else if(rbKarma.selected)
+					type=BeanTypeE.KARMA;
+				else if(rbList.selected)
+					type=BeanTypeE.LIST;
+				else if(rbEmpty.selected)
+					type=BeanTypeE.EMPTY;
+				
+				dispatchEvent(new Event("CHANGE"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:RadioButtonGroup id="rbType" itemClick="rbType_itemClickHandler(event)"/>
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="CHANGE", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:VGroup>
+		<s:HGroup width="100%">
+			<s:RadioButton id="rbEmpty" label="Empty" groupName="rbType" selected="true"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+			<s:RadioButton id="rbInt" label="Int" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+			<s:RadioButton id="rbString" label="String" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+		</s:HGroup>
+		<s:HGroup width="100%">
+			<s:RadioButton id="rbKarma" label="Karma" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+			<s:RadioButton id="rbList" label="List" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+		</s:HGroup>
+		<s:HGroup width="100%">
+			<s:RadioButton id="rbBool" label="Bool" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+			<s:RadioButton id="rbDouble" label="Double" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+			<s:RadioButton id="rbBytes" label="Bytes" groupName="rbType"
+						   skinClass="azura.common.ui.skin.LargeDotSkin"/>
+		</s:HGroup>
+	</s:VGroup>
+</s:BorderContainer>

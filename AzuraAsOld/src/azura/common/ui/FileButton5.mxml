@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  currentState="Free" mouseDown="event.stopImmediatePropagation()"
+		  mouseMove="event.stopImmediatePropagation()" mouseUp="event.stopImmediatePropagation()"
+		  rightMouseDown="event.stopImmediatePropagation()"
+		  chromeColor.Busy="#FF0000"
+		  click.Free="button1_clickHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.setTimeout;
+			
+			public var _ext:String='';		
+			public var _extFunc:Function;
+			private var ref:FileReference;
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				event.stopImmediatePropagation();
+				
+				if(_extFunc!=null)
+					_ext=_extFunc.call();
+				
+				ref=new FileReference();
+				ref.addEventListener(Event.SELECT,fileSelected);
+				
+				if (_ext == '')
+				{
+					ref.browse();
+				}
+				else
+				{
+					var ff:FileFilter=new FileFilter(_ext, _ext);
+					ref.browse([ff]);
+				}
+			}
+			
+			private function fileSelected(event:Event):void{				
+				currentState='Busy';
+				ref.addEventListener(Event.COMPLETE,fileLoaded);
+				ref.load();
+				trace("FileButton: loading");
+			}
+			private function fileLoaded(event:Event):void{	
+				currentState="Free";
+				trace("FileButton: loaded");
+				var e5:FileButton5Event=new FileButton5Event();
+				e5.data=ref.data;
+				e5.fileName=ref.name;
+				ref=null;
+				
+				setTimeout(dispatchEvent,100,e5);
+//				dispatchEvent(e5);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<mx:State name="Free"/>
+		<mx:State name="Busy"/>
+	</s:states>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="_FILEREADY", type="azura.common.ui.FileButton5Event")]
+	</fx:Metadata>
+</s:Button>

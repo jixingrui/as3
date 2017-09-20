@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:ui1="azura.avalon.maze3.ui.*"
+		 width="100%" height="100%" addedToStage="group1_addedToStageHandler(event)"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import assets.Config_Maze3;
+			
+			import azura.avalon.maze3.data.Mdoor2;
+			import azura.avalon.maze3.service.Maze3DoorEditNet;
+			import azura.banshee.engine.starling_away.StarlingAway;
+			import azura.banshee.engine.starling_away.StarlingLayer;
+			import azura.banshee.zebra.editor.zforest.Zforest2;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.helios.hard10.hub.HardItem;
+			
+			import mx.events.FlexEvent;
+			
+			private var sl:StarlingLayer;
+			
+			private var canvas:LayerMaze3DoorEdit2;
+			
+			private var sn:Maze3DoorEditNet;
+			
+			public var mc5LastDoor:String="";
+			
+			private var this_:Maze3DoorEditPanel;
+			
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+//				Statics.stage=stage;
+//				LoaderInitializer.singleton();
+				
+				this_=this;
+				
+				StarlingAway.init(stage,holder,saReady);
+				function saReady():void{
+					StarlingAway.addStarlingLayer(sReady);
+				}
+				function sReady(sl_:StarlingLayer):void{
+					sl=sl_;
+					canvas=new LayerMaze3DoorEdit2(sl,stage);
+					doorPanel.canvas=canvas;
+					canvas.panel=this_;
+				}
+				
+//				Stage3DRoot.singleton().init(stage,holder,onInit);
+//				function onInit():void{
+//					canvas=new LayerMaze3DoorEdit(G2dEngine.singleton().singleLayer,stage);
+//					doorPanel.canvas=canvas;
+//					canvas.panel=this_;
+//				}
+				
+				var config:Config_Maze3=new Config_Maze3();
+				config.onReady.add(onReady);
+				function onReady():void{
+					sn=new Maze3DoorEditNet(config);
+					Maze3DoorEditNet.cs.cs.hub.register(drRoom);
+					Maze3DoorEditNet.cs.cs.hub.register(drDoor);
+				}
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				roomPanel.onSave.add(roomReady);
+			}
+			
+			private function roomReady():void{
+				drRoom.save();
+				showRoom();
+			}
+			
+			protected function drRoom_SELECTHandler(event:Event):void
+			{
+				trace("select",this);
+				if(roomPanel.room.name!=drRoom.selectedItem.name){
+					roomPanel.room.name=drRoom.selectedItem.name;
+					drRoom.save();
+				}
+				
+				showRoom();
+			}
+			
+			private function showRoom():void{
+				var data:ZintBuffer=Gal4.readSync(roomPanel.room.me5Zforest);
+				if(data==null){
+					canvas.clear();
+					return;
+				}
+				
+				data.uncompress();
+				
+				var zf:Zforest2=new Zforest2();
+				zf.fromBytes(data);
+				roomPanel.room.zmax=zf.base.zMax;
+				
+				canvas.loadZforest(zf);
+			}
+			
+			protected function drDoor_DATAARRIVEHandler(event:Event):void
+			{
+				var doorList:Vector.<Mdoor2>=new Vector.<Mdoor2>();
+				for each(var i:HardItem in drDoor.down){
+					var d:Mdoor2=new Mdoor2();
+					try
+					{
+						d.fromBytes(i.data);
+					} 
+					catch(error:Error) 
+					{
+						d.init();
+					}
+					i.data.position=0;
+					doorList.push(d);
+				}
+				
+				canvas.loadDoor(doorList);
+			}
+			
+			protected function drRoom_UNSELECTHandler(event:Event):void
+			{
+				trace("unselect",this);
+				canvas.clear();
+			}
+			
+			protected function btnZmaze_clickHandler(event:MouseEvent):void
+			{
+//				Maze3DoorEditNet.cs.cs.dump(onDump);
+				trace("dump is moved to woo",name);
+			}
+			
+			private function onDump(zb:ZintBuffer):void{
+				var save:FileReference=new FileReference();
+				save.save(zb,"dump.zmaze");
+			}
+			
+			protected function drDoor_SELECTHandler(event:Event):void
+			{
+				canvas.door=doorPanel.door;
+				canvas.idxSelectedDoor=drDoor.selectedIdx;
+//				canvas.lookAt(doorPanel.door.zebra.x,doorPanel.door.zebra.y);
+			}
+			protected function drDoor_UNSELECTHandler(event:Event):void
+			{
+				//				canvas.itemDisplay.clear();
+			}
+			public function rotateItem(angle:int):void{
+				//				canvas.itemDisplay.angle=angle;
+				//				drDoor.save();
+			}
+			
+			private function itemZebraLoaded():void{
+				drDoor.save();
+			}
+			
+			
+			protected function doorPanel_SAVEHandler(event:Event):void
+			{
+				drDoor.save();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<s:Button id="btnZmaze" y="10" label="dump .zmaze" click="btnZmaze_clickHandler(event)"
+			  horizontalCenter="0" visible="false"/>
+	<s:VGroup x="10" top="20" bottom="10" horizontalAlign="center"
+			  mouseDown="event.stopImmediatePropagation()"
+			  mouseUp="event.stopImmediatePropagation()">
+		<ui1:RoomPanel id="roomPanel" width="130" enabled="{drRoom.selectedItem!=null}"
+					   horizontalAlign="center"/>
+		<ui:Hard10UI id="drRoom" enabled="true" reader="{roomPanel.room}"
+					 SELECT="drRoom_SELECTHandler(event)" title="Room"
+					 UNSELECT="drRoom_UNSELECTHandler(event)"/>
+	</s:VGroup>
+	<s:VGroup right="10" top="10" bottom="10" width="180">
+		<ui1:DoorPanel2 id="doorPanel" enabled="{drDoor.selectedItem!=null}"
+					   SAVE="doorPanel_SAVEHandler(event)"/>
+		<ui:Hard10UI id="drDoor" width="100%" DATAARRIVE="drDoor_DATAARRIVEHandler(event)"
+					 enabled="{drRoom.selectedItem!=null}" reader="{doorPanel.door}"
+					 SELECT="drDoor_SELECTHandler(event)" title="Door"
+					 UNSELECT="drDoor_UNSELECTHandler(event)"/>
+	</s:VGroup>
+</s:Group>

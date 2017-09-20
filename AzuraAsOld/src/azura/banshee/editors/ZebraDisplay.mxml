@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="common.ui.*"
+		 xmlns:editor="azura.banshee.editor.zebra.editor.*"
+		 xmlns:zebra="azura.banshee.editor.zebra.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%">
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.layers.LayerZebraDisplay;
+			import azura.banshee.zebra.Zebra;
+			import azura.banshee.zebra.node.ZebraNode;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid3.GalMail;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.source.GsFile;
+			
+			[Bindable]
+			private var zebra:Zebra=new Zebra();
+			private var actor:ZebraNode;
+			private var layer:LayerZebraDisplay;
+			
+			public function set active(value:Boolean):void{
+				if(value){
+					layer=new LayerZebraDisplay(G2dEngine.singleton().singleLayer);
+					layer.onTurn.add(onTurn);
+					actor=new ZebraNode(layer.canvas);
+				}else{
+					layer.onTurn.remove(onTurn);
+					actor.dispose();
+					layer.dispose();
+				}
+			}
+			
+			private function onTurn(angle:int):void{
+				actor.angle=angle;
+			}
+			
+//			private var pack:GsFile;
+			protected function fbPart_READYHandler(event:Event):void
+			{
+//				if(pack!=null)
+//					pack.dispose();
+				
+				var master:String=Gallerid.singleton().cacheMemFromPack(fbZebra.file);
+//				pack=new GsFile(fbZebra.file);
+				
+				var item:GalMail=Gallerid.singleton().getData(master);
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				zebra.fromBytes(data);
+				
+				actor.zebra=zebra;
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				actor.scaleLocal*=1.2;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				actor.scaleLocal*=0.8;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SpriteVisualElement id="holder"/>
+	<file:FileButton6 id="fbZebra" x="10" y="50" label="读取" _ext="*.zebra"
+					  READY="fbPart_READYHandler(event)"/>
+	<s:Label y="10" color="0xffffff" horizontalCenter="0" text="斑马查看器"/>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+</s:Group>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:list="azura.helios.hard10.ui.list.*"
+		 height="30" creationComplete="group1_creationCompleteHandler(event)"
+		 currentState="unselected" implements="azura.common.ui.grid.ItemI2"
+		 mouseDown="bordercontainer1_mouseDownHandler(event)" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.touch.watcherOld.WatcherDoubleClick;
+			import azura.touch.watcherOld.WatcherEvent;
+			import azura.helios.hard10.hub.HardItem;
+			
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			
+			private var _node:HardItem;
+			
+			private var wd:WatcherDoubleClick;
+			
+			[Bindable]
+			public var list:HardList;
+			
+			[Bindable]
+			public function get node():HardItem
+			{
+				return _node;
+			}
+			
+			public function set node(value:HardItem):void
+			{
+				_node = value;
+			}
+			
+			private function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				wd=new WatcherDoubleClick(this);
+				wd.addEventListener(WatcherEvent.DOUBLECLICK,onDoubleClick);
+			}
+			
+			private function onDoubleClick(we:WatcherEvent):void{
+				list.jump();
+			}
+			
+			public function gridMoveItem(x:Number,y:Number):void{
+//				trace("grid move item",name);
+//				var iv:IVisualElement=item as IVisualElement;
+				this.x=x-this.width/2+list.holder.width/2+list.largeFrameX;
+				this.y=y-this.height/2+list.holder.height/2+list.largeFrameY;
+			}
+			
+			public function set gridAlpha(value:Number):void
+			{
+				this.alpha=value;
+			}
+			
+			public function get gridVisible():Boolean
+			{
+				return this.visible;
+			}
+			
+			public function set gridVisible(value:Boolean):void
+			{
+				this.visible=value;
+			}
+			
+			private function bordercontainer1_mouseDownHandler(event:MouseEvent):void
+			{
+				if(currentState!='edit')
+					list.select(this);
+			}
+			
+			public function select():void{
+				currentState='selected';
+			}
+			
+			public function unselect():void{
+				currentState='unselected';
+			}
+			
+			public function edit():void{
+				currentState='edit';
+				stage.focus=tiEdit;
+				tiEdit.text=node.name;
+				tiEdit.selectRange(0,tiEdit.text.length);
+			}
+			
+			public function unEdit():void{
+				if(currentState=='edit')
+					currentState='selected';
+			}
+			
+			private function tiEdit_enterHandler(event:FlexEvent):void
+			{
+				list.rename(tiEdit.text);
+				currentState='selected';
+			}
+			
+			private function tiEdit_keyUpHandler(event:KeyboardEvent):void
+			{
+				event.stopImmediatePropagation();
+				if(event.keyCode==Keyboard.ESCAPE)
+					currentState='selected';
+			}
+			
+			private function tiEdit_keyDownHandler(event:KeyboardEvent):void
+			{
+				event.stopImmediatePropagation();
+			}
+			
+			private function tiEdit_focusOutHandler(event:FocusEvent):void
+			{
+				if(event.target!=tiEdit)
+					unEdit();
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="unselected"/>
+		<s:State name="selected"/>
+		<s:State name="edit"/>
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Rect includeIn="selected" left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<!--- Defines the color of the background. -->
+			<s:SolidColor color="0x888888"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="0x444444" weight="1"/>
+		</s:stroke>
+	</s:Rect>
+	<s:Rect includeIn="unselected" left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<!--- Defines the color of the background. -->
+			<s:SolidColor color="0x0"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="0x0" weight="1"/>
+		</s:stroke>
+	</s:Rect>
+	<s:Rect includeIn="edit" left="0" right="0" top="0" bottom="0">
+		<s:fill>
+			<!--- Defines the color of the background. -->
+			<s:SolidColor color="0x00ff00"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="0x0" weight="1"/>
+		</s:stroke>
+	</s:Rect>
+	<label:PlusLabel id="pl" includeIn="selected,unselected" label="{node.name}" color="0xffffff"
+				  plus="{list.showPlus&amp;&amp;node.numChildren&gt;0}"/>
+	<s:TextInput id="tiEdit" includeIn="edit" left="1" right="1" top="1" bottom="1" height="28"
+				 minWidth="25" color="0x0" enter="tiEdit_enterHandler(event)"
+				 focusOut="tiEdit_focusOutHandler(event)" keyDown="tiEdit_keyDownHandler(event)"
+				 keyUp="tiEdit_keyUpHandler(event)" mouseChildren="false"/>
+</s:Group>

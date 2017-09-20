@@ -1,0 +1,16 @@
+﻿<root>
+	<mazeRun>
+		<speedShooter>240</speedShooter>
+		<speedZombie>600</speedZombie>
+		<maze>assets/town0.75V5.maze</maze>
+		<karma>assets/Maze_v9.k2</karma>
+		<shooter1>assets/rifleMan1_0.75.person.animal</shooter1>
+		<shooter2>assets/rifleMan2_0.75.person.animal</shooter2>
+		<zombie1>assets/zombie1_0.75.person.animal</zombie1>
+		<zombie2>assets/zombie2_0.75.person.animal</zombie2>
+	</mazeRun>
+	<ice>
+		<host>localhost</host>
+		<port>7131</port>
+	</ice>
+</root>

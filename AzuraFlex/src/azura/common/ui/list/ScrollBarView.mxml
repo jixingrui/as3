@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="100%">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, _value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var _text:String='';
+			
+			private var value:int;
+
+			[Bindable]
+			public function get _value():int
+			{
+				return value;
+			}
+
+			public function set _value(newValue:int):void
+			{
+				if(newValue<0)
+					newValue=0;
+				if(newValue>_maximum)
+					newValue=_maximum;
+				value = newValue;
+				dispatchEvent(new Event("VALUE_COMMIT"));
+			}
+
+			[Bindable]
+			public function get _maximum():int
+			{
+				return hsb.maximum;
+			}
+
+			public function set _maximum(newMaximum:int):void
+			{
+				if(newMaximum<0)
+					newMaximum=0;
+				hsb.maximum = newMaximum;
+			}
+
+			protected function hsb_changeHandler(event:Event):void
+			{
+				_value=hsb.value;
+				dispatchEvent(new Event("CHANGE"));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="CHANGE", type="flash.events.Event")]
+		[Event(name="VALUE_COMMIT", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Label id="label" top="0" horizontalCenter="0" text="{_text} {_value}/{_maximum}" fontSize="16" />
+	<s:HScrollBar id="hsb" y="16" width="100%" click="event.stopImmediatePropagation()" change="hsb_changeHandler(event)" horizontalCenter="0" maximum="{_maximum}" value="{_value}"/>
+</s:Group>

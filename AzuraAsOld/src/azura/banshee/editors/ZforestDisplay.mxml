@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="100%" height="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.g2d.G2dEngine;
+			import azura.banshee.layers.LayerMiniMap;
+			import azura.banshee.zebra.Zebra;
+			import azura.banshee.layers.LayerZforestDrag;
+			import azura.common.collections.ZintBuffer;
+			import azura.common.util.OS;
+			import azura.gallerid3.GalMail;
+			import azura.gallerid3.Gallerid;
+			import azura.gallerid3.source.GsFile;
+			
+			import spark.skins.spark.windowChrome.MinimizeButtonSkin;
+			
+			private var canvas:LayerZforestDrag;
+			//			private var minimap:LayerMiniMap;
+			
+			private var packZforest:GsFile;
+			private var packZebra:GsFile;
+			
+			public function set active(value:Boolean):void{
+				if(value){
+					canvas=new LayerZforestDrag(G2dEngine.singleton().singleLayer);
+				}else{
+					canvas.dispose();
+				}
+			}
+			
+			protected function fbZforest_READYHandler(event:Event):void
+			{
+				if(canvas.active){
+					this.active=false;
+					this.active=true;
+				}
+				packZforest=new GsFile(fbZforest.file);
+//				Gallerid.singleton().addPack(packZforest);
+				canvas.mc5Scene=packZforest.master;
+				canvas.onMove.add(onMove);
+			}
+			
+			private function onMove(x:int,y:int):void{
+				moveMinimap();
+			}
+			
+			protected function fbAvatar_READYHandler(event:Event):void
+			{
+				packZebra=new GsFile(fbAvatar.file);
+//				Gallerid.singleton().addPack(packZebra);
+				
+				var item:GalMail=Gallerid.singleton().getData(packZebra.master);
+				//				item.data.uncompress();
+				var data:ZintBuffer=item.dataClone();
+				data.uncompress();
+				
+				var z:Zebra=new Zebra();
+				z.fromBytes(data);
+				
+				canvas.showWalker(z);
+			}
+			
+			protected function btnZoomIn_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=1.1;
+			}
+			
+			protected function btnZoomOut_clickHandler(event:MouseEvent):void
+			{
+				canvas.root.root.scaleLocal*=0.9;
+			}
+			
+			protected function btnMinimap_clickHandler(event:MouseEvent):void
+			{
+				showMap();
+			}
+			
+			private var lm:LayerMiniMap;
+			public function showMap():void{
+				if(lm==null){
+					var scale:Number=0.25;
+					if(OS.isAndroid&&Capabilities.screenResolutionX>1280)
+						scale*=2;
+					lm=new LayerMiniMap(G2dEngine.singleton().singleLayer,scale);
+					lm.boot(canvas.zforest.zforest);
+					lm.root.mask=new Rectangle(stage.stageWidth*0.1,
+						stage.stageHeight*0.1,
+						stage.stageWidth*0.8,
+						stage.stageHeight*0.8);
+					moveMinimap();
+				}else{
+					lm.dispose();
+					lm=null;
+				}
+			}
+			
+			public function moveMinimap():void{
+				if(lm==null)
+					return;
+				
+//				var lf:LayerZforestWalk=currentLayer as LayerZforestWalk;	
+				//			trace("minimap",lf.x,lf.y,this);
+				lm.lookAt(canvas.root.xView,canvas.root.yView);
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup y="20">
+		<file:FileButton6 id="fbZforest" label="load .zforest" _ext="*.zforest" READY="fbZforest_READYHandler(event)"/>
+		<file:FileButton6 id="fbAvatar" label="load .zebra" _ext="*.zebra" READY="fbAvatar_READYHandler(event)" />		
+		<s:Button label="minimap" id="btnMinimap" click="btnMinimap_clickHandler(event)"/>
+	</s:VGroup>
+	<s:HGroup bottom="10" horizontalCenter="0">
+		<s:Button id="btnZoomOut" label="小" click="btnZoomOut_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+		<s:Button id="btnZoomIn" label="大" click="btnZoomIn_clickHandler(event)"
+				  mouseDown="event.stopPropagation()" mouseUp="event.stopPropagation()"/>
+	</s:HGroup>
+</s:Group>

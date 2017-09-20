@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:sb="lift.util.sb.*"
+		 xmlns:shine="azura.common.ui.shine.*"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import azura.banshee.engine.Statics;
+			
+			import azura.common.loaders.BitmapLoader;
+			import azura.touch.watcherOld.WatcherDoubleClick;
+			import azura.touch.watcherOld.WatcherDrag;
+			import azura.touch.watcherOld.WatcherEvent;
+			import azura.touch.watcherOld.WatcherZoom;
+			import azura.common.util.Fork;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			private var fork:Fork=new Fork(showLarge,"creation","data");
+			
+			private var largeWidth:int;
+			private var largeHeight:int;
+			
+			private var bitmap:Bitmap;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				large.source=bitmap;
+				showLarge();				
+			}
+									
+			public function set url(value:String):void
+			{
+				BitmapLoader.load(value,showBitmap);
+			}
+			
+			public function showBitmap(b:Bitmap):void{
+				bitmap=b;
+				largeWidth=b.width;
+				largeHeight=b.height;
+				show();
+			}
+			
+			private function showLarge():void{
+				
+				large.transformX=largeWidth/2;
+				large.transformY=largeHeight/2;
+				large.scaleX=Statics.stageScaleX;
+				large.scaleY=Statics.stageScaleY;
+				
+				large.x=-largeWidth/2;
+				large.y=-largeHeight/2;
+				
+				this.width=large.width;
+				this.height=large.height;
+				PopUpManager.centerPopUp(this);
+			}
+			
+			private function show():void{
+				var parent:DisplayObject=FlexGlobals.topLevelApplication.root;
+				this.setStyle("modalTransparency", 0);
+				PopUpManager.addPopUp(this,parent,true);
+				
+				setTimeout(remove,1500);
+			}
+			
+			private function remove():void{
+				PopUpManager.removePopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="close", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:Image id="large" smooth="true"/>
+</s:Group>

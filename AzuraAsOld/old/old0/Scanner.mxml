@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   xmlns:mx="library://ns.adobe.com/flex/mx"
+				   width="100%" height="100%" mouseDown="event.stopImmediatePropagation()"
+				   mouseUp="event.stopImmediatePropagation()">
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.google.zxing.BarcodeFormat;
+			import com.google.zxing.BinaryBitmap;
+			import com.google.zxing.BufferedImageLuminanceSource;
+			import com.google.zxing.DecodeHintType;
+			import com.google.zxing.Result;
+			import com.google.zxing.client.result.BookmarkDoCoMoResultParser;
+			import com.google.zxing.client.result.ParsedResult;
+			import com.google.zxing.client.result.ResultParser;
+			import com.google.zxing.common.BitMatrix;
+			import com.google.zxing.common.ByteMatrix;
+			import com.google.zxing.common.GlobalHistogramBinarizer;
+			import com.google.zxing.common.flexdatatypes.HashTable;
+			import com.google.zxing.qrcode.QRCodeReader;
+			import com.google.zxing.qrcode.detector.Detector;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.events.FlexEvent;
+			
+			protected var camera:Camera;
+			private var bmd:BitmapData;
+			
+			private var qrReader:QRCodeReader=new QRCodeReader();
+			private var timer:Timer=new Timer(1000,2);
+			private var _video:Video = new Video();					
+			
+			private var initialized_:Boolean;
+			[Bindable]
+			private var camOn:Boolean;
+			
+			protected function videoDisplay_addedToStageHandler(event:Event):void
+			{
+				this.width=stage.stageWidth;
+				this.height=stage.stageHeight;
+				checkInit();
+				checkCamera();		
+			}
+			
+			private function checkInit():void{
+				if(initialized_)
+					return;
+				initialized_=true;
+				
+				videoDisplay.addChild(_video);
+				timer.addEventListener(TimerEvent.TIMER,onTick);
+				function onTick(event:TimerEvent):void{
+					lbMessage.text="稳住！ "+(timer.repeatCount-timer.currentCount);
+				}
+				timer.addEventListener(TimerEvent.TIMER_COMPLETE,onScan);
+				function onScan(event:TimerEvent):void{
+					lbMessage.text="扫描中...";
+					setTimeout(doScan,0);					
+				}
+			}
+			
+			private function doScan():void{
+				var result:String=scan();
+				if(result==null){
+					lbMessage.text="对焦不准或角度不正。再试一次？";
+				}else{
+					lbMessage.text=result;
+				}
+			}
+			
+			private function checkCamera():void{
+				
+				if(camOn)
+					throw new Error("Scanner: must hide camera when not used");
+				
+				camera = getBackCamera();
+				if (camera!=null)
+				{
+					camOn=true;
+					camera.setMode(stage.stageWidth, stage.stageHeight, 5);
+					_video.attachCamera(camera);					
+					_video.width = stage.stageWidth;					
+					_video.height = stage.stageHeight;					
+				}
+				else {
+					
+				}
+			}
+			
+			protected function videoDisplay_removedFromStageHandler(event:Event):void
+			{
+				_video.attachCamera(null);
+				camOn=false;
+			}
+			
+			private function getBackCamera():Camera
+			{				
+				if(!Camera.isSupported)
+					return null;
+				
+				var camera:Camera;
+				var cameraCount:uint = Camera.names.length;
+				if(cameraCount==0){
+					return null;
+				}else if(cameraCount==1){
+					return Camera.getCamera();
+				}else{
+					for ( var i:uint = 0; i < cameraCount; ++i )
+					{
+						camera = Camera.getCamera( String(i) );
+						if(!camera.hasOwnProperty("position")){
+							break;
+						}else if ( camera.position == "back" ) 
+							break;
+					}
+				}
+				if(camera==null)
+					camera=Camera.getCamera();
+				if(camera.width<=0||camera.height<=0)
+					camera=null;
+				
+				return camera;
+			}
+						
+			private function scan():String
+			{
+				bmd=new BitmapData(videoDisplay.width, videoDisplay.height);
+				bmd.draw(videoDisplay);
+				
+				bmd=scaleDown(bmd);
+				
+				var result:String=decodeBitmapData(bmd);
+				bmd.dispose();
+				bmd=null;
+				return result;
+			}
+			
+			private function scaleDown(big:BitmapData):BitmapData{
+				var scale:Number=1;
+				var max:Number=720;
+				if(big.width>big.height){
+					if(big.width>max){
+						scale=max/big.width;
+					}else{
+						return big;
+					}
+				}else{
+					if(big.height>max){
+						scale=max/big.height;
+					}else{
+						return big;
+					}
+				}
+				
+				var matrix:Matrix = new Matrix();
+				matrix.scale(scale, scale);
+				
+				var small:BitmapData = new BitmapData(big.width * scale, big.height * scale);
+				small.draw(big, matrix);
+				
+				return small;
+			}
+			
+			private function decodeBitmapData(bmpd:BitmapData):String
+			{
+				var lsource:BufferedImageLuminanceSource=new BufferedImageLuminanceSource(bmpd);
+				var bitmap:BinaryBitmap=new BinaryBitmap(new GlobalHistogramBinarizer(lsource));
+				
+				var res:Result=null;
+				try {
+					res=qrReader.decode(bitmap);
+				}
+				catch (event:Error) {
+				}
+				
+				if (res == null) {
+					return null;
+				}
+				else {
+					var parsedResult:ParsedResult=ResultParser.parseResult(res);
+					return parsedResult.getDisplayResult();
+				}
+			}
+			
+			protected function lbMessage_addedToStageHandler(event:Event):void
+			{
+				if(camOn){
+					lbMessage.text='二维码扫描：对焦清晰后点击扫描';
+				}else{
+					lbMessage.text='摄像头不可用';
+				}
+			}
+			
+			protected function btnScan_mouseDownHandler(event:MouseEvent):void
+			{
+				if(!timer.running){
+					timer.reset();
+					timer.start();
+					lbMessage.text="稳住！ "+(timer.repeatCount-timer.currentCount);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="close", type="flash.events.Event")]
+	</fx:Metadata>
+	<s:VideoDisplay id="videoDisplay" width="100%" height="100%"
+					addedToStage="videoDisplay_addedToStageHandler(event)"
+					removedFromStage="videoDisplay_removedFromStageHandler(event)">
+	</s:VideoDisplay>
+	<s:BorderContainer top="10" horizontalCenter="0">
+		<s:Label id="lbMessage" y="4" addedToStage="lbMessage_addedToStageHandler(event)"
+				 fontSize="20"/>
+	</s:BorderContainer>
+	<s:Button left="10" bottom="100" label="扫描" enabled="{camOn}" id="btnScan" mouseDown="btnScan_mouseDownHandler(event)"/>
+	<s:Button left="10" bottom="10" label="返回" click="dispatchEvent(new Event(Event.CLOSE))"/>
+</s:BorderContainer>

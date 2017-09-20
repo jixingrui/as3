@@ -1,0 +1,7 @@
+﻿<root>
+	<syncher>
+		<host>dell5055</host>
+		<port>7735</port>
+		<sender_receiver>false</sender_receiver>
+	</syncher>
+</root>

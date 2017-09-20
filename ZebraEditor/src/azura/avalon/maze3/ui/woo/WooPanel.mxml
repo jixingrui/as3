@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:ui="azura.common.ui.*"
+		  xmlns:ui1="azura.avalon.maze.ui.*"
+		  xmlns:file="azura.common.ui.file.*"
+		  width="100%" xmlns:label="azura.common.ui.label.*">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze.data.EventCenter;
+			import azura.avalon.maze3.data.Mwoo;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.Gal4;
+			import azura.gallerid4.GalPack4;
+			
+			import mx.core.FlexGlobals;
+			import mx.managers.PopUpManager;
+			
+			private var _woo:Mwoo=new Mwoo();
+			
+			public var canvas:LayerMaze3WooEdit;
+			
+			[Bindable]
+			public function get woo():Mwoo
+			{
+				return _woo;
+			}
+			
+			public function set woo(value:Mwoo):void
+			{
+				_woo=value;
+				trace(value.toString(),this);
+			}
+			
+			protected function lsUid_changeHandler(event:Event):void
+			{
+				//				item.uid=lsUid.string;
+				//				EventCenter.saveItem.dispatch(item);
+				//				onSave.dispatch();
+			}
+			
+			protected function fbIcon_READYHandler(event:Event):void
+			{			
+				var master:String=new GalPack4().loadFrom(fbIcon.file);
+				var data:ZintBuffer=Gal4.readSync(master);
+				data.uncompress();
+				
+				woo.icon.clear();
+				woo.icon.fromBytes(data);
+				canvas.showWoo(woo);
+				
+				dispatchEvent(new Event("SAVE"));
+			}
+			
+			protected function btnMoveWoo_clickHandler(event:MouseEvent):void
+			{
+				EventCenter.moveItem.dispatch();
+			}
+			
+			protected function btnRotateWoo_clickHandler(event:MouseEvent):void
+			{
+				canvas.rotateItem(0);
+			}
+			
+			private var wf:WooFunction;
+			protected function btnFunc_clickHandler(event:MouseEvent):void
+			{
+				wf=new WooFunction();
+				var parent:DisplayObject=FlexGlobals.topLevelApplication.root;
+				PopUpManager.addPopUp(wf,parent,true);
+				PopUpManager.centerPopUp(wf);
+				wf.cargo=_woo.cargo;
+				wf.onClose.add(onClose);
+				function onClose():void{
+//					_woo.cargo=wf.cargo;
+					dispatchEvent(new Event("SAVE"));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="SAVE", type="flash.events.Event")]
+	</fx:Metadata>
+	<label:LabelString2 id="lsUid" label="UID" change="lsUid_changeHandler(event)" string="{woo.uid}"/>
+	<s:HGroup width="100%">
+		<file:FileButton6 id="fbIcon" width="100%" label="load .zebra" _ext="*.zebra" color="0"
+						  READY="fbIcon_READYHandler(event)"/>
+		<s:Button id="btnFunc" label="function" width="100%" click="btnFunc_clickHandler(event)" />
+	</s:HGroup>
+	<s:HGroup width="100%">
+		<s:Button id="btnMoveWoo" width="100%" label="move" click="btnMoveWoo_clickHandler(event)"
+				  color="0"/>
+		<s:Button id="btnRotateWoo" width="100%" label="rotate 0"
+				  click="btnRotateWoo_clickHandler(event)" color="0"/>
+	</s:HGroup>
+</s:VGroup>

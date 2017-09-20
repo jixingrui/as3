@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:ui="azura.helios.hard10.ui.*"
+		 xmlns:seeker="azura.avalon.maze3.ui.seeker.*"
+		 xmlns:file="azura.common.ui.file.*"
+		 width="180" height="100%" fontSize="20">
+	<fx:Script>
+		<![CDATA[
+			import azura.avalon.maze3.data.Helix;
+			import azura.avalon.maze3.service.Maze3SeekerEditNet;
+			import azura.common.collections.ZintBuffer;
+			import azura.gallerid4.GalPack4;
+			
+			[Bindable]
+			public var helix:Helix=new Helix();
+			
+			protected function drHelix_SELECTHandler(event:Event):void
+			{
+				var isLeaf:Boolean=drHelix.selectedItem.numChildren==0;
+				if(helix.isLeaf!=isLeaf){
+					helix.isLeaf=isLeaf;
+					drHelix.save();
+				}
+			}
+			
+			protected function fbListIcon_READYHandler(event:Event):void
+			{
+				helix.listIcon=new GalPack4().loadFrom(fbListIcon.file);
+				drHelix.save();
+				trace("list icon",helix.listIcon,name);
+			}
+			
+			protected function fbGridIcon_READYHandler(event:Event):void
+			{
+				helix.gridIcon=new GalPack4().loadFrom(fbGridIcon.file);
+				drHelix.save();
+				trace("grid icon",helix.gridIcon,name);
+			}
+			
+			protected function btnShow_clickHandler(event:MouseEvent):void
+			{
+				if(helix.listIcon=='')
+					return;
+				
+				if(helix.gridIcon=='')
+					return;
+				
+			}
+			
+			protected function btnDump_clickHandler(event:MouseEvent):void
+			{
+				Maze3SeekerEditNet.cs.cs.dump(onDump);
+				function onDump(zb:ZintBuffer):void{
+					var train:TreeTrain=new TreeTrain();
+					train.fromBytes(zb);
+					
+//					var helixList:Vector.<Helix>=new Vector.<Helix>();
+					for each(var car:TreeCar in train.id_TreeCar){
+						var helix:Helix=new Helix();
+						helix.fromBytes(car.data);
+//						helixList.push(helix);
+						car.passenger=helix;
+					}
+					
+					var ffr:FileReference=new FileReference();
+					ffr.save(train.toBytes(),"dump.helix");
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VGroup width="100%" height="100%">		
+		<s:VGroup width="100%" enabled="{drHelix.selectedItem!=null}">			
+			<s:HGroup>
+				<s:Button id="btnShow" label="show" click="btnShow_clickHandler(event)"/>
+				<file:FileButton6 id="fbGridIcon" label="Grid Icon" _ext="*.zebra"
+								  READY="fbGridIcon_READYHandler(event)"/>
+				<file:FileButton6 id="fbListIcon" label="ListIcon" _ext="*.zebra" visible="{!helix.isLeaf}"
+								  READY="fbListIcon_READYHandler(event)"/>
+			</s:HGroup>
+			<s:Label id="lbWoo" visible="{helix.isLeaf}" text="{helix.toWooName}"/>
+		</s:VGroup>
+		<ui:Hard10UI id="drHelix" x="10" y="10" width="100%" reader="{helix}"
+					 SELECT="drHelix_SELECTHandler(event)" title="Helix"/>
+	</s:VGroup>
+	<s:Button id="btnDump" x="300" y="10" label="dump .helix" click="btnDump_clickHandler(event)"/>
+</s:Group>

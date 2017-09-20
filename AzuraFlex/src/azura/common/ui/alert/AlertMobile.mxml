@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnablePopUpContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+						   xmlns:s="library://ns.adobe.com/flex/spark"
+						   backgroundAlpha="0">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.core.FlexGlobals;
+			import mx.managers.PopUpManager;
+			import mx.states.OverrideBase;
+			[Bindable]
+			private var message:String;
+			
+			private function clickHandler(commit:Boolean):void {
+				super.close(commit);                                
+			}
+			
+			public function show(message:String):void{
+				this.message=message;
+								
+				open(FlexGlobals.topLevelApplication as DisplayObjectContainer,true);
+				PopUpManager.centerPopUp(this);
+			}
+						
+		]]>
+	</fx:Script>
+	<s:BorderContainer width="100%" backgroundColor="0x999999" borderColor="0xffffff"
+					   borderWeight="4" cornerRadius="10">
+		<s:VGroup width="100%" bottom="10">
+			<s:Label width="100%"
+					 maxDisplayedLines="6" paddingBottom="12" paddingLeft="15" paddingRight="15"
+					 paddingTop="12" text="{this.message}"/>
+			<s:Group width="100%">
+				<s:HGroup bottom="0" width="100%" height="100%" horizontalAlign="center"
+						  paddingLeft="10" paddingRight="10" verticalAlign="middle">
+					<s:Button id="yesBtn" label="Yes" chromeColor="#ECECEC"
+							  click="clickHandler(true)" />
+					<s:Button id="noBtn" label="No" chromeColor="#ECECEC"
+							  click="clickHandler(false)" />
+				</s:HGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:BorderContainer>
+</s:SkinnablePopUpContainer>
